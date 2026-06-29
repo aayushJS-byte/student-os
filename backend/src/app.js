@@ -38,4 +38,10 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 
+import errorHandler from "./middlewares/error.middleware.js";
+
+// ... all routes above
+
+app.use(errorHandler);
+
 export default app;

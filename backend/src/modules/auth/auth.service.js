@@ -1,10 +1,17 @@
 import User from "../user/user.model.js";
-import { hashPassword } from "../../utils/password.js";
+
 import AppError from "../../errors/AppError.js";
 
-export const registerUser = async (data) => {
-    const { name, email, password } = data;
+import { hashPassword, comparePassword } from "../../utils/password.js";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+} from "../../utils/jwt.js";
 
+/**
+ * Register User
+ */
+export const registerUser = async ({ name, email, password }) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -23,5 +30,52 @@ export const registerUser = async (data) => {
         id: user._id,
         name: user.name,
         email: user.email,
+    };
+};
+
+/**
+ * Login User
+ */
+export const loginUser = async ({ email, password }) => {
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+        throw new AppError("Invalid email or password.", 401);
+    }
+
+    const isPasswordCorrect = await comparePassword(
+        password,
+        user.password
+    );
+
+    if (!isPasswordCorrect) {
+        throw new AppError("Invalid email or password.", 401);
+    }
+
+    if (!user.isVerified) {
+        throw new AppError(
+            "Please verify your email before logging in.",
+            403
+        );
+    }
+
+    const payload = {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    return {
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        },
+        accessToken,
+        refreshToken,
     };
 };
