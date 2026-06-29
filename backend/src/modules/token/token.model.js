@@ -1,0 +1,48 @@
+import mongoose from "mongoose";
+import { TOKEN_TYPES } from "../../constants/tokenTypes.js";
+
+const tokenSchema = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true,
+        },
+
+        tokenHash: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+
+        type: {
+            type: String,
+            enum: Object.values(TOKEN_TYPES),
+            required: true,
+            index: true,
+        },
+
+        expiresAt: {
+            type: Date,
+            required: true,
+            index: true,
+        },
+    },
+    {
+        timestamps: true,
+        versionKey: false,
+    }
+);
+
+// Automatically delete expired tokens
+tokenSchema.index(
+    { expiresAt: 1 },
+    {
+        expireAfterSeconds: 0,
+    }
+);
+
+const Token = mongoose.model("Token", tokenSchema);
+
+export default Token;
