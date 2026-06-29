@@ -7,7 +7,7 @@ import {
     generateAccessToken,
     generateRefreshToken,
 } from "../../utils/jwt.js";
-
+import { createEmailVerificationToken } from "../token/token.service.js";
 /**
  * Register User
  */
@@ -25,7 +25,10 @@ export const registerUser = async ({ name, email, password }) => {
         email,
         password: hashedPassword,
     });
+    const verificationToken =
+    await createEmailVerificationToken(user._id);
 
+    console.log("Verification Token:", verificationToken);
     return {
         id: user._id,
         name: user.name,
