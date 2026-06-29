@@ -28,7 +28,11 @@ export const login = asyncHandler(async (req, res) => {
         user,
         accessToken,
         refreshToken,
-    } = await loginUser(req.validatedData);
+    } = await loginUser({
+        ...req.validatedData,
+        userAgent: req.headers["user-agent"] || "",
+        ipAddress: req.ip,
+    });
 
     res.cookie(
         "accessToken",

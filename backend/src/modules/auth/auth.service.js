@@ -3,7 +3,7 @@ import Token from "../token/token.model.js";
 
 import AppError from "../../errors/AppError.js";
 import env from "../../config/env.js";
-
+import { createSession } from "../session/session.service.js";
 import { hashPassword, comparePassword } from "../../utils/password.js";
 
 import {
@@ -80,6 +80,8 @@ export const registerUser = async ({
 export const loginUser = async ({
     email,
     password,
+    userAgent,
+    ipAddress,
 }) => {
     const user = await User.findOne({
         email,
@@ -123,6 +125,13 @@ export const loginUser = async ({
 
     const refreshToken =
         generateRefreshToken(payload);
+
+    await createSession({
+        userId: user._id,
+        refreshToken,
+        userAgent,
+        ipAddress,
+    });
 
     return {
         user: {
