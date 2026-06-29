@@ -7,6 +7,8 @@ import morgan from "morgan";
 
 import ApiResponse from "./utils/ApiResponse.js";
 
+import authRoutes from "./modules/auth/auth.routes.js";
+
 const app = express();
 
 app.use(helmet());
@@ -19,11 +21,9 @@ app.use(
 );
 
 app.use(compression());
-
 app.use(cookieParser());
 
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
 app.use(morgan("dev"));
@@ -35,5 +35,7 @@ app.get("/api/v1/health", (req, res) => {
         "StudentOS API is running"
     );
 });
+
+app.use("/api/v1/auth", authRoutes);
 
 export default app;
