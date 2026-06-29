@@ -24,3 +24,11 @@ export const createEmailVerificationToken = async (userId) => {
 
     return rawToken;
 };
+export const findVerificationToken = async (token) => {
+    const tokenHash = hashToken(token);
+
+    return await Token.findOne({
+        tokenHash,
+        type: TOKEN_TYPES.EMAIL_VERIFICATION,
+    }).populate("user");
+};

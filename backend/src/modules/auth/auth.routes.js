@@ -10,6 +10,7 @@ import {
 import {
     register,
     login,
+    verify,
 } from "./auth.controller.js";
 
 const router = Router();
@@ -24,6 +25,11 @@ router.post(
     "/login",
     validate(loginSchema),
     login
+);
+
+router.get(
+    "/verify-email",
+    verify
 );
 
 export default router;
