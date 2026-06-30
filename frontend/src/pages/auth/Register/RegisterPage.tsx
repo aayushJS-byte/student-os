@@ -36,8 +36,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <FormCard>
+    <FormCard>
         {/* Brand */}
         <div className="mb-8 text-center">
           <p className="text-sm font-semibold tracking-widest text-zinc-500 uppercase">
@@ -121,7 +120,6 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
-      </FormCard>
-    </div>
+    </FormCard>
   );
 }

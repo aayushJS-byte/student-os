@@ -5,6 +5,11 @@ const STATUS_VALUES = [
   "accepted", "rejected", "withdrawn", "ghosted",
 ] as const;
 
+const SOURCE_VALUES = [
+  "linkedin", "naukri", "company_site", "campus",
+  "referral", "internshala", "wellfound", "other",
+] as const;
+
 const JOB_TYPE_VALUES = ["internship", "full-time", "part-time", "contract"] as const;
 
 const INTERVIEW_TYPE_VALUES = [
@@ -27,12 +32,15 @@ export const applicationSchema = z.object({
   jobType: z.enum(JOB_TYPE_VALUES).default("internship"),
   status: z.enum(STATUS_VALUES).default("wishlist"),
   jobLink: z.string().trim().default(""),
+  salaryRange: z.string().trim().default(""),
+  source: z.enum(SOURCE_VALUES).optional().nullable(),
   appliedDate: z.string().optional(),
   deadline: z.string().optional(),
   resumeVersion: z.string().trim().default(""),
   referral: z.boolean().default(false),
   referralName: z.string().trim().default(""),
   notes: z.string().default(""),
+  outcomeReason: z.string().trim().default(""),
   tags: z.array(z.enum(APPLICATION_TAG_VALUES)).default([]),
   oa: z
     .object({
@@ -51,6 +59,7 @@ export const applicationSchema = z.object({
       joiningDate: z.string().optional(),
       deadline: z.string().optional(),
       accepted: z.boolean().default(false),
+      documentLink: z.string().trim().max(500).optional(),
     })
     .optional(),
 });

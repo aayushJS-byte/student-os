@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   APPLICATION_STATUS,
+  APPLICATION_SOURCE,
   JOB_TYPE,
   INTERVIEW_TYPE,
   INTERVIEW_RESULT,
@@ -35,6 +36,11 @@ const optionalPositiveInt = z.preprocess(
 
 const statusValues = Object.values(APPLICATION_STATUS);
 const jobTypeValues = Object.values(JOB_TYPE);
+const sourceValues = Object.values(APPLICATION_SOURCE);
+
+// Terminal statuses (outcome states — cannot set on creation, only via status transitions)
+const TERMINAL_STATUSES = ["accepted", "rejected", "withdrawn", "ghosted"];
+const creationStatusValues = statusValues.filter((s) => !TERMINAL_STATUSES.includes(s));
 const interviewTypeValues = Object.values(INTERVIEW_TYPE);
 const interviewResultValues = Object.values(INTERVIEW_RESULT);
 
@@ -45,14 +51,19 @@ export const createApplicationSchema = z.object({
   role: z.string().trim().min(1, "Role is required").max(120),
   location: z.string().trim().max(120).optional().default(""),
   jobType: z.enum(jobTypeValues).optional().default(JOB_TYPE.INTERNSHIP),
-  status: z.enum(statusValues).optional().default(APPLICATION_STATUS.WISHLIST),
+  status: z.enum(creationStatusValues, {
+    error: `Cannot create an application with a terminal status. Use wishlist, applied, oa, interview, or offer.`,
+  }).optional().default(APPLICATION_STATUS.WISHLIST),
   jobLink: z.string().trim().max(500).optional().default(""),
+  salaryRange: z.string().trim().max(200).optional().default(""),
+  source: z.enum(sourceValues).optional().nullable(),
   appliedDate: optionalDate,
   deadline: optionalDate,
   resumeVersion: z.string().trim().max(80).optional().default(""),
   referral: z.boolean().optional().default(false),
   referralName: z.string().trim().max(80).optional().default(""),
   notes: z.string().max(5000).optional().default(""),
+  outcomeReason: z.string().trim().max(1000).optional().default(""),
   tags: z.array(z.enum(APPLICATION_TAGS)).optional().default([]),
   oa: z
     .object({
@@ -71,6 +82,7 @@ export const createApplicationSchema = z.object({
       joiningDate: optionalDate,
       deadline: optionalDate,
       accepted: z.boolean().optional().default(false),
+      documentLink: z.string().trim().max(500).optional(),
     })
     .optional(),
 });
@@ -81,12 +93,15 @@ export const updateApplicationSchema = z.object({
   location: z.string().trim().max(120).optional(),
   jobType: z.enum(jobTypeValues).optional(),
   jobLink: z.string().trim().max(500).optional(),
+  salaryRange: z.string().trim().max(200).optional(),
+  source: z.enum(sourceValues).optional().nullable(),
   appliedDate: optionalDate,
   deadline: optionalDate,
   resumeVersion: z.string().trim().max(80).optional(),
   referral: z.boolean().optional(),
   referralName: z.string().trim().max(80).optional(),
   notes: z.string().max(5000).optional(),
+  outcomeReason: z.string().trim().max(1000).optional(),
   tags: z.array(z.enum(APPLICATION_TAGS)).optional(),
   oa: z
     .object({
@@ -105,6 +120,7 @@ export const updateApplicationSchema = z.object({
       joiningDate: optionalDate,
       deadline: optionalDate,
       accepted: z.boolean().optional(),
+      documentLink: z.string().trim().max(500).optional(),
     })
     .optional(),
 });

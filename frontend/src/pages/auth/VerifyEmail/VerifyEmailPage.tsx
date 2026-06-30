@@ -12,8 +12,7 @@ export default function VerifyEmailPage() {
   const { isLoading, isSuccess, isError } = useVerifyEmail(token);
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <FormCard>
+    <FormCard>
         <div className="text-center">
           <p className="text-sm font-semibold tracking-widest text-zinc-500 uppercase">
             StudentOS
@@ -93,7 +92,6 @@ export default function VerifyEmailPage() {
             </motion.div>
           )}
         </div>
-      </FormCard>
-    </div>
+    </FormCard>
   );
 }

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import {
   APPLICATION_STATUS,
+  APPLICATION_SOURCE,
   JOB_TYPE,
   INTERVIEW_TYPE,
   INTERVIEW_RESULT,
@@ -57,6 +58,12 @@ const applicationSchema = new mongoose.Schema(
       default: JOB_TYPE.INTERNSHIP,
     },
     jobLink: { type: String, trim: true, default: "" },
+    salaryRange: { type: String, trim: true, default: "" }, // compensation mentioned in JD
+    source: {
+      type: String,
+      enum: [...Object.values(APPLICATION_SOURCE), null],
+      default: null,
+    }, // where the job was found
 
     // Status
     status: {
@@ -84,12 +91,13 @@ const applicationSchema = new mongoose.Schema(
 
     // Offer details
     offer: {
-      ctc: { type: Number, default: null },       // annual, for full-time
-      stipend: { type: Number, default: null },    // per month, for internship
+      ctc: { type: Number, default: null },          // annual, for full-time
+      stipend: { type: Number, default: null },       // per month, for internship
       currency: { type: String, enum: CURRENCIES, default: "INR" },
       joiningDate: { type: Date, default: null },
       deadline: { type: Date, default: null },
       accepted: { type: Boolean, default: false },
+      documentLink: { type: String, trim: true, default: "" }, // link to offer letter PDF
     },
 
     // Metadata
@@ -97,13 +105,19 @@ const applicationSchema = new mongoose.Schema(
     referral: { type: Boolean, default: false },
     referralName: { type: String, trim: true, default: "" },
     notes: { type: String, default: "" },
+    outcomeReason: { type: String, trim: true, default: "" }, // why rejected/withdrawn, or offer notes
     tags: [{ type: String, enum: APPLICATION_TAGS }],
 
     // Auto-generated activity log (never user-edited)
     activityLog: { type: [activityLogSchema], default: [] },
 
-    // Soft delete
-    deletedAt: { type: Date, default: null },
+    // Tracks which reminder emails have already been sent to prevent duplicates.
+    // key examples: 'deadline_7d', 'oa_24h', 'offer_12h', 'interview_24h_<interviewId>'
+    sentReminders: {
+      type: [{ key: String, sentAt: Date }],
+      default: [],
+    },
+
   },
   {
     timestamps: true,
@@ -114,7 +128,7 @@ const applicationSchema = new mongoose.Schema(
 applicationSchema.index({ user: 1, status: 1 });
 applicationSchema.index({ user: 1, createdAt: -1 });
 applicationSchema.index({ user: 1, deadline: 1 });
-applicationSchema.index({ user: 1, deletedAt: 1 });
+
 
 const Application = mongoose.model("Application", applicationSchema);
 

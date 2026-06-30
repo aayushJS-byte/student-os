@@ -12,6 +12,8 @@ import {
   updateInterview,
   deleteInterview,
   getApplicationStats,
+  getAnalytics,
+  getOffers,
 } from "./application.service.js";
 
 export const create = asyncHandler(async (req, res) => {
@@ -22,6 +24,16 @@ export const create = asyncHandler(async (req, res) => {
 export const list = asyncHandler(async (req, res) => {
   const result = await getApplications(req.user._id, req.query);
   return ApiResponse.success(res, result, "Applications fetched.");
+});
+
+export const analyticsOverview = asyncHandler(async (req, res) => {
+  const data = await getAnalytics(req.user._id);
+  return ApiResponse.success(res, data, "Analytics fetched.");
+});
+
+export const listOffers = asyncHandler(async (req, res) => {
+  const offers = await getOffers(req.user._id);
+  return ApiResponse.success(res, { offers }, "Offers fetched.");
 });
 
 export const stats = asyncHandler(async (req, res) => {

@@ -9,6 +9,7 @@ import { useApplicationFilters } from "@/hooks/applications/useApplicationFilter
 import ApplicationTable from "@/components/applications/ApplicationTable";
 import ApplicationFilters from "@/components/applications/ApplicationFilters";
 import ApplicationForm from "@/components/applications/ApplicationForm";
+import CreateApplicationFlow from "@/components/applications/CreateApplicationFlow";
 import Drawer from "@/components/ui/Drawer";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Spinner from "@/components/ui/Spinner";
@@ -66,12 +67,10 @@ export default function ApplicationsPage() {
 
   const applications = data?.applications ?? [];
   const pagination = data?.pagination;
-  const isSubmitLoading = createMutation.isPending || updateMutation.isPending;
-  const submitError = editTarget ? updateMutation.error : createMutation.error;
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <div className="mx-auto max-w-6xl px-4 py-8">
+    <>
+    <div className="mx-auto max-w-6xl px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -155,20 +154,36 @@ export default function ApplicationsPage() {
         </motion.div>
       </div>
 
-      {/* Create / Edit Drawer */}
+      {/* Create Drawer */}
       <Drawer
-        isOpen={drawerOpen}
+        isOpen={drawerOpen && !editTarget}
         onClose={closeDrawer}
-        title={editTarget ? "Edit Application" : "New Application"}
+        title="New Application"
         width="md"
       >
-        <ApplicationForm
-          defaultValues={editTarget ?? undefined}
+        <CreateApplicationFlow
           onSubmit={handleFormSubmit}
-          isLoading={isSubmitLoading}
-          error={submitError}
-          submitLabel={editTarget ? "Save Changes" : "Add Application"}
+          isLoading={createMutation.isPending}
+          error={createMutation.error}
         />
+      </Drawer>
+
+      {/* Edit Drawer */}
+      <Drawer
+        isOpen={drawerOpen && !!editTarget}
+        onClose={closeDrawer}
+        title="Edit Application"
+        width="md"
+      >
+        {editTarget && (
+          <ApplicationForm
+            defaultValues={editTarget}
+            onSubmit={handleFormSubmit}
+            isLoading={updateMutation.isPending}
+            error={updateMutation.error}
+            submitLabel="Save Changes"
+          />
+        )}
       </Drawer>
 
       {/* Delete Confirmation */}
@@ -181,6 +196,6 @@ export default function ApplicationsPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </>
   );
 }

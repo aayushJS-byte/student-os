@@ -1,5 +1,6 @@
 import type {
   ApplicationStatus,
+  ApplicationSource,
   JobType,
   InterviewType,
   InterviewResult,
@@ -12,7 +13,7 @@ export const APPLICATION_STATUS_CONFIG: Record<
   { label: string; className: string }
 > = {
   wishlist: {
-    label: "Wishlist",
+    label: "Saved",
     className: "text-zinc-400 bg-zinc-800 border-zinc-700",
   },
   applied: {
@@ -50,7 +51,7 @@ export const APPLICATION_STATUS_CONFIG: Record<
 };
 
 export const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
-  { value: "wishlist", label: "Wishlist" },
+  { value: "wishlist", label: "Saved" },
   { value: "applied", label: "Applied" },
   { value: "oa", label: "OA" },
   { value: "interview", label: "Interview" },
@@ -60,6 +61,41 @@ export const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "withdrawn", label: "Withdrawn" },
   { value: "ghosted", label: "Ghosted" },
 ];
+
+// Allowed statuses when CREATING an application (no terminal outcomes)
+export const CREATION_STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
+  { value: "wishlist", label: "Saved" },
+  { value: "applied", label: "Applied" },
+  { value: "oa", label: "OA" },
+  { value: "interview", label: "Interview" },
+  { value: "offer", label: "Offer" },
+];
+
+// Forward-only transitions — cannot go back to a previous checkpoint
+export const ALLOWED_NEXT_STATUSES: Record<ApplicationStatus, ApplicationStatus[]> = {
+  wishlist: ["applied"],
+  applied: ["oa", "interview", "accepted", "rejected", "withdrawn", "ghosted"],
+  oa: ["interview", "accepted", "rejected", "withdrawn", "ghosted"],
+  interview: ["accepted", "rejected", "withdrawn", "ghosted"],
+  offer: ["accepted", "rejected", "withdrawn", "ghosted"],
+  accepted: [],
+  rejected: [],
+  withdrawn: [],
+  ghosted: [],
+};
+
+// Status rank for progressive form gating (higher = more advanced stage)
+export const STATUS_RANK: Record<ApplicationStatus, number> = {
+  wishlist: 0,
+  applied: 1,
+  oa: 2,
+  interview: 3,
+  offer: 4,
+  accepted: 4,
+  rejected: 4,
+  withdrawn: 4,
+  ghosted: 4,
+};
 
 export const JOB_TYPE_OPTIONS: { value: JobType; label: string }[] = [
   { value: "internship", label: "Internship" },
@@ -91,6 +127,17 @@ export const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
   { value: "GBP", label: "GBP £" },
   { value: "AED", label: "AED د.إ" },
   { value: "SGD", label: "SGD S$" },
+];
+
+export const SOURCE_OPTIONS: { value: ApplicationSource; label: string }[] = [
+  { value: "linkedin",     label: "LinkedIn" },
+  { value: "naukri",       label: "Naukri" },
+  { value: "campus",       label: "Campus (CDC / On-campus)" },
+  { value: "company_site", label: "Company Website" },
+  { value: "referral",     label: "Referral" },
+  { value: "internshala",  label: "Internshala" },
+  { value: "wellfound",    label: "Wellfound / AngelList" },
+  { value: "other",        label: "Other" },
 ];
 
 export const APPLICATION_TAGS: ApplicationTag[] = [

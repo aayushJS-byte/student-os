@@ -2,15 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ApplicationService } from "@/services/application.service";
 import { APPLICATION_KEYS } from "./queryKeys";
 
-export function useApplication(id: string) {
+export function useOffers() {
   return useQuery({
-    queryKey: APPLICATION_KEYS.detail(id),
+    queryKey: APPLICATION_KEYS.offers(),
     queryFn: async () => {
-      const response = await ApplicationService.getApplication(id);
-      return response.data.data;
+      const response = await ApplicationService.getOffers();
+      return response.data.data.offers;
     },
-    enabled: !!id,
     staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
   });
 }

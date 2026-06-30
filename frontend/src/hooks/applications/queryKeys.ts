@@ -7,4 +7,6 @@ export const APPLICATION_KEYS = {
   details: () => [...APPLICATION_KEYS.all, "detail"] as const,
   detail: (id: string) => [...APPLICATION_KEYS.details(), id] as const,
   stats: () => [...APPLICATION_KEYS.all, "stats"] as const,
+  offers: () => [...APPLICATION_KEYS.all, "offers"] as const,
+  analytics: () => [...APPLICATION_KEYS.all, "analytics"] as const,
 };

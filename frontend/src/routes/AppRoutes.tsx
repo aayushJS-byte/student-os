@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import RootLayout from "@/layouts/RootLayout";
+import AppShell from "@/layouts/AppShell";
+import AuthLayout from "@/layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 
@@ -12,6 +14,7 @@ import VerifyEmailPage from "@/pages/auth/VerifyEmail/VerifyEmailPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 import ApplicationsPage from "@/pages/applications/ApplicationsPage";
 import ApplicationDetailPage from "@/pages/applications/ApplicationDetailPage";
+import OffersPage from "@/pages/offers/OffersPage";
 import NotFoundPage from "@/pages/error/NotFoundPage";
 
 export default function AppRoutes() {
@@ -20,21 +23,28 @@ export default function AppRoutes() {
       <Route element={<RootLayout />}>
         {/* Public */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-        {/* Guest-only (redirect to /dashboard if authenticated) */}
-        <Route element={<GuestRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* Auth layout (split-screen landing + forms) */}
+        <Route element={<AuthLayout />}>
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+          {/* Guest-only (redirect to /dashboard if authenticated) */}
+          <Route element={<GuestRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Route>
         </Route>
 
         {/* Protected (redirect to /login if unauthenticated) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/applications" element={<ApplicationsPage />} />
-          <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/applications" element={<ApplicationsPage />} />
+            <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+            <Route path="/offers" element={<OffersPage />} />
+          </Route>
         </Route>
 
         <Route path="/404" element={<NotFoundPage />} />

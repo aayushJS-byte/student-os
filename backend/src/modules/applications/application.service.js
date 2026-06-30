@@ -10,7 +10,7 @@ import { APPLICATION_STATUS } from "./application.constants.js";
  * Throws 404 if not found, 403 if not owned by userId.
  */
 const findOwned = async (id, userId) => {
-  const application = await Application.findOne({ _id: id, deletedAt: null });
+  const application = await Application.findById(id);
   if (!application) throw new AppError("Application not found.", 404);
   if (!application.user.equals(userId)) throw new AppError("Forbidden.", 403);
   return application;
@@ -47,7 +47,7 @@ export const getApplications = async (userId, query = {}) => {
     limit = 20,
   } = query;
 
-  const filter = { user: new mongoose.Types.ObjectId(userId), deletedAt: null };
+  const filter = { user: new mongoose.Types.ObjectId(userId) };
 
   if (status) {
     const statuses = status.split(",").map((s) => s.trim());
@@ -99,6 +99,28 @@ export const getApplicationById = async (userId, id) => {
 export const updateApplication = async (userId, id, data) => {
   const application = await findOwned(id, userId);
 
+  // When a date changes, clear its corresponding sent-reminder keys so the
+  // scheduler re-sends reminders calibrated to the new date.
+  const dateChanged = (current, incoming) =>
+    incoming !== undefined &&
+    (!current || current.getTime() !== new Date(incoming).getTime());
+
+  if (dateChanged(application.deadline, data.deadline)) {
+    application.sentReminders = application.sentReminders.filter(
+      (r) => !r.key.startsWith("deadline_")
+    );
+  }
+  if (data.oa && dateChanged(application.oa?.scheduledAt, data.oa.scheduledAt)) {
+    application.sentReminders = application.sentReminders.filter(
+      (r) => !r.key.startsWith("oa_")
+    );
+  }
+  if (data.offer && dateChanged(application.offer?.deadline, data.offer.deadline)) {
+    application.sentReminders = application.sentReminders.filter(
+      (r) => !r.key.startsWith("offer_")
+    );
+  }
+
   // Merge nested OA and offer fields rather than overwriting the whole subdocument
   if (data.oa) {
     Object.assign(application.oa, data.oa);
@@ -128,6 +150,11 @@ export const updateApplicationStatus = async (userId, id, newStatus) => {
     application.appliedDate = new Date();
   }
 
+  // Clear ghost nudge keys so the new status stage can fire its own nudge if needed
+  application.sentReminders = application.sentReminders.filter(
+    (r) => !r.key.startsWith("ghost_")
+  );
+
   addActivity(
     application,
     "STATUS_CHANGED",
@@ -140,8 +167,7 @@ export const updateApplicationStatus = async (userId, id, newStatus) => {
 
 export const deleteApplication = async (userId, id) => {
   const application = await findOwned(id, userId);
-  application.deletedAt = new Date();
-  await application.save();
+  await application.deleteOne();
   return true;
 };
 
@@ -167,6 +193,19 @@ export const updateInterview = async (userId, applicationId, interviewId, data) 
 
   const interview = application.interviews.id(interviewId);
   if (!interview) throw new AppError("Interview not found.", 404);
+
+  // If scheduledAt changed, clear this interview's reminder keys so they re-fire
+  const dateChanged = (current, incoming) =>
+    incoming !== undefined &&
+    (!current || current.getTime() !== new Date(incoming).getTime());
+
+  if (dateChanged(interview.scheduledAt, data.scheduledAt)) {
+    const prefix24 = `interview_24h_${interviewId}`;
+    const prefix2  = `interview_2h_${interviewId}`;
+    application.sentReminders = application.sentReminders.filter(
+      (r) => r.key !== prefix24 && r.key !== prefix2
+    );
+  }
 
   Object.assign(interview, data);
 
@@ -195,6 +234,100 @@ export const deleteInterview = async (userId, applicationId, interviewId) => {
   return application;
 };
 
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export const getAnalytics = async (userId) => {
+  const uid = new mongoose.Types.ObjectId(userId);
+
+  const [result] = await Application.aggregate([
+    { $match: { user: uid } },
+    {
+      $facet: {
+        byStatus: [
+          { $group: { _id: "$status", count: { $sum: 1 } } },
+        ],
+        byMonth: [
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { _id: 1 } },
+          { $limit: 12 },
+        ],
+        bySource: [
+          { $match: { source: { $ne: null } } },
+          { $group: { _id: "$source", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+        byJobType: [
+          { $group: { _id: "$jobType", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+      },
+    },
+  ]);
+
+  const statusMap = Object.fromEntries(
+    (result.byStatus ?? []).map(({ _id, count }) => [_id, count])
+  );
+
+  const s = (key) => statusMap[key] ?? 0;
+
+  // Funnel: cumulative count of apps that REACHED each stage or beyond
+  const funnelApplied   = s("applied") + s("oa") + s("interview") + s("offer") + s("accepted") + s("rejected") + s("withdrawn") + s("ghosted");
+  const funnelOA        = s("oa")        + s("interview") + s("offer") + s("accepted");
+  const funnelInterview = s("interview") + s("offer") + s("accepted");
+  const funnelOffer     = s("offer")     + s("accepted");
+  const funnelAccepted  = s("accepted");
+
+  const pct = (num, den) => (den > 0 ? Math.round((num / den) * 100) : null);
+
+  return {
+    pipeline: {
+      wishlist:  s("wishlist"),
+      applied:   s("applied"),
+      oa:        s("oa"),
+      interview: s("interview"),
+      offer:     s("offer"),
+      accepted:  s("accepted"),
+      rejected:  s("rejected"),
+      withdrawn: s("withdrawn"),
+      ghosted:   s("ghosted"),
+      total:     Object.values(statusMap).reduce((a, b) => a + b, 0),
+    },
+    kpi: {
+      totalApplications: funnelApplied,
+      active: s("applied") + s("oa") + s("interview"),
+      offers: s("offer") + s("accepted"),
+      acceptanceRate: pct(funnelAccepted, funnelApplied),
+      ghostRate: pct(s("ghosted"), funnelApplied),
+    },
+    funnel: [
+      { stage: "Applied",   count: funnelApplied,   conversion: 100 },
+      { stage: "OA",        count: funnelOA,        conversion: pct(funnelOA, funnelApplied) },
+      { stage: "Interview", count: funnelInterview, conversion: pct(funnelInterview, funnelApplied) },
+      { stage: "Offer",     count: funnelOffer,     conversion: pct(funnelOffer, funnelApplied) },
+      { stage: "Accepted",  count: funnelAccepted,  conversion: pct(funnelAccepted, funnelApplied) },
+    ],
+    byMonth:   result.byMonth   ?? [],
+    bySource:  result.bySource  ?? [],
+    byJobType: result.byJobType ?? [],
+  };
+};
+
+// ─── Offers ───────────────────────────────────────────────────────────────────
+
+export const getOffers = async (userId) => {
+  return Application.find({
+    user: new mongoose.Types.ObjectId(userId),
+    status: { $in: ["offer", "accepted"] },
+  })
+    .select("company role jobType status offer outcomeReason createdAt updatedAt")
+    .sort({ updatedAt: -1 });
+};
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 export const getApplicationStats = async (userId) => {
@@ -202,7 +335,6 @@ export const getApplicationStats = async (userId) => {
     {
       $match: {
         user: new mongoose.Types.ObjectId(userId),
-        deletedAt: null,
       },
     },
     {

@@ -10,7 +10,22 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   isLoading?: boolean;
+  /**
+   * "danger"  — red confirm button (default, for destructive actions like delete)
+   * "primary" — white/neutral confirm button (for forward confirmations)
+   * "info"    — neutral confirm button, no Cancel (for informational blocks)
+   */
+  variant?: "danger" | "primary" | "info";
 }
+
+const CONFIRM_CLASSES: Record<string, string> = {
+  danger:
+    "border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20",
+  primary:
+    "border-zinc-600 bg-white/10 text-white hover:bg-white/15",
+  info:
+    "border-zinc-600 bg-zinc-800 text-zinc-200 hover:bg-zinc-700",
+};
 
 export default function ConfirmDialog({
   isOpen,
@@ -18,8 +33,9 @@ export default function ConfirmDialog({
   onCancel,
   title,
   message,
-  confirmLabel = "Delete",
+  confirmLabel = "Confirm",
   isLoading = false,
+  variant = "danger",
 }: ConfirmDialogProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -52,20 +68,26 @@ export default function ConfirmDialog({
             <h3 className="text-sm font-semibold text-white">{title}</h3>
             <p className="mt-2 text-sm text-zinc-400">{message}</p>
             <div className="mt-6 flex gap-3">
-              <Button
-                variant="ghost"
-                onClick={onCancel}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
+              {variant !== "info" && (
+                <Button
+                  variant="ghost"
+                  onClick={onCancel}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              )}
               <button
                 onClick={onConfirm}
                 disabled={isLoading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className={[
+                  "flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                  variant === "info" ? "w-full" : "flex-1",
+                  CONFIRM_CLASSES[variant],
+                ].join(" ")}
               >
-                {confirmLabel}
+                {isLoading ? "…" : confirmLabel}
               </button>
             </div>
           </motion.div>

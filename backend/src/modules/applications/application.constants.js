@@ -33,6 +33,17 @@ export const INTERVIEW_RESULT = Object.freeze({
   FAILED: "failed",
 });
 
+export const APPLICATION_SOURCE = Object.freeze({
+  LINKEDIN: "linkedin",
+  NAUKRI: "naukri",
+  COMPANY_SITE: "company_site",
+  CAMPUS: "campus",
+  REFERRAL: "referral",
+  INTERNSHALA: "internshala",
+  WELLFOUND: "wellfound",
+  OTHER: "other",
+});
+
 export const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD"];
 
 export const APPLICATION_TAGS = [

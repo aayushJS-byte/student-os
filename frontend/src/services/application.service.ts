@@ -2,9 +2,11 @@ import { api } from "@/api/axios";
 import type { ApiResponse } from "@/types/api";
 import type {
   Application,
+  AnalyticsData,
   ApplicationFilters,
   ApplicationListResponse,
   ApplicationStats,
+  OfferRecord,
 } from "@/types/application";
 import type { ApplicationFormData, InterviewFormData } from "@/schemas/application.schemas";
 
@@ -55,5 +57,13 @@ export const ApplicationService = {
 
   getStats() {
     return api.get<ApiResponse<ApplicationStats>>("/applications/stats/summary");
+  },
+
+  getOffers() {
+    return api.get<ApiResponse<{ offers: OfferRecord[] }>>("/applications/offers");
+  },
+
+  getAnalytics() {
+    return api.get<ApiResponse<AnalyticsData>>("/applications/analytics");
   },
 };

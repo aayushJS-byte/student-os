@@ -24,6 +24,16 @@ export type InterviewResult = "pending" | "passed" | "failed";
 
 export type Currency = "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD";
 
+export type ApplicationSource =
+  | "linkedin"
+  | "naukri"
+  | "company_site"
+  | "campus"
+  | "referral"
+  | "internshala"
+  | "wellfound"
+  | "other";
+
 export type ApplicationTag =
   | "dream"
   | "target"
@@ -70,6 +80,19 @@ export interface OfferDetails {
   joiningDate: string | null;
   deadline: string | null;
   accepted: boolean;
+  documentLink: string;
+}
+
+export interface OfferRecord {
+  _id: string;
+  company: string;
+  role: string;
+  jobType: JobType;
+  status: "offer" | "accepted";
+  offer: OfferDetails;
+  outcomeReason: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Application {
@@ -80,6 +103,8 @@ export interface Application {
   location: string;
   jobType: JobType;
   jobLink: string;
+  salaryRange: string;
+  source: ApplicationSource | null;
   status: ApplicationStatus;
   appliedDate: string | null;
   deadline: string | null;
@@ -90,6 +115,7 @@ export interface Application {
   referral: boolean;
   referralName: string;
   notes: string;
+  outcomeReason: string;
   tags: ApplicationTag[];
   activityLog: ActivityEntry[];
   createdAt: string;
@@ -120,6 +146,38 @@ export interface ApplicationStats {
   withdrawn: number;
   ghosted: number;
   total: number;
+}
+
+export interface AnalyticsFunnelStage {
+  stage: string;
+  count: number;
+  conversion: number | null;
+}
+
+export interface AnalyticsData {
+  pipeline: {
+    wishlist: number;
+    applied: number;
+    oa: number;
+    interview: number;
+    offer: number;
+    accepted: number;
+    rejected: number;
+    withdrawn: number;
+    ghosted: number;
+    total: number;
+  };
+  kpi: {
+    totalApplications: number;
+    active: number;
+    offers: number;
+    acceptanceRate: number | null;
+    ghostRate: number | null;
+  };
+  funnel: AnalyticsFunnelStage[];
+  byMonth: { _id: string; count: number }[];
+  bySource: { _id: string; count: number }[];
+  byJobType: { _id: string; count: number }[];
 }
 
 export interface ApplicationFilters {

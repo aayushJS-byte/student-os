@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { interviewSchema, type InterviewFormData } from "@/schemas/application.schemas";
 import { INTERVIEW_TYPE_OPTIONS, INTERVIEW_RESULT_OPTIONS } from "@/constants/application";
-import { formatDate, toInputDate } from "@/utils/date";
+import { formatDateTime, toInputDateTime } from "@/utils/date";
 import { getApiErrorMessage } from "@/utils/error";
 import type { Interview } from "@/types/application";
 import Input from "@/components/ui/Input";
@@ -45,7 +45,7 @@ function InterviewFormBlock({
       ? {
           round: defaultValues.round,
           type: defaultValues.type,
-          scheduledAt: toInputDate(defaultValues.scheduledAt),
+          scheduledAt: toInputDateTime(defaultValues.scheduledAt),
           duration: defaultValues.duration ?? undefined,
           notes: defaultValues.notes,
           result: defaultValues.result,
@@ -89,8 +89,8 @@ function InterviewFormBlock({
         />
 
         <Input
-          label="Date"
-          type="date"
+          label="Date & Time"
+          type="datetime-local"
           {...register("scheduledAt")}
         />
 
@@ -261,7 +261,7 @@ export default function InterviewTimeline({
                   </div>
                   {interview.scheduledAt && (
                     <p className="text-xs text-zinc-500">
-                      {formatDate(interview.scheduledAt, "medium")}
+                      {formatDateTime(interview.scheduledAt)}
                       {interview.duration && ` · ${interview.duration} min`}
                     </p>
                   )}

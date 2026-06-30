@@ -13,7 +13,9 @@ import {
 import {
   create,
   list,
+  listOffers,
   stats,
+  analyticsOverview,
   get,
   update,
   updateStatus,
@@ -28,8 +30,10 @@ const router = Router();
 // All application routes require authentication
 router.use(protect);
 
-// Stats — must be before /:id to avoid "summary" being treated as an id
+// Named sub-routes — must be before /:id to avoid being treated as IDs
 router.get("/stats/summary", stats);
+router.get("/analytics", analyticsOverview);
+router.get("/offers", listOffers);
 
 // Application CRUD
 router.post("/", validate(createApplicationSchema), create);
