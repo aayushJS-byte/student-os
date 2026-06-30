@@ -7,7 +7,7 @@ import env from "../../config/env.js";
 import {
     createSession,
     deleteUserSessions,
-    deleteSession
+    deleteSession,
 } from "../session/session.service.js";
 
 import {
@@ -18,7 +18,7 @@ import {
 import {
     generateAccessToken,
     generateRefreshToken,
-    verifyRefreshToken
+    verifyRefreshToken,
 } from "../../utils/jwt.js";
 
 import {
@@ -36,48 +36,25 @@ import resetPasswordTemplate from "../../mail/resetPassword.template.js";
 /**
  * Register User
  */
-export const registerUser = async ({
-    name,
-    email,
-    password,
-}) => {
-    const existingUser = await User.findOne({
-        email,
-    });
+export const registerUser = async ({ name, email, password }) => {
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-        throw new AppError(
-            "Email already registered.",
-            409
-        );
+        throw new AppError("Email already registered.", 409);
     }
 
-    const hashedPassword =
-        await hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
-    const user = await User.create({
-        name,
-        email,
-        password: hashedPassword,
-    });
+    const user = await User.create({ name, email, password: hashedPassword });
 
-    // Generate verification token
-    const verificationToken =
-        await createEmailVerificationToken(
-            user._id
-        );
+    const verificationToken = await createEmailVerificationToken(user._id);
 
-    const verificationUrl =
-        `http://localhost:${env.PORT}/api/v1/auth/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${env.CLIENT_URL}/verify-email?token=${verificationToken}`;
 
-    // Send verification email
     await sendEmail({
         to: user.email,
         subject: "Verify your StudentOS Account",
-        html: verifyEmailTemplate({
-            name: user.name,
-            verificationUrl,
-        }),
+        html: verifyEmailTemplate({ name: user.name, verificationUrl }),
     });
 
     return {
@@ -90,41 +67,21 @@ export const registerUser = async ({
 /**
  * Login User
  */
-export const loginUser = async ({
-    email,
-    password,
-    userAgent,
-    ipAddress,
-}) => {
-    const user = await User.findOne({
-        email,
-    }).select("+password");
+export const loginUser = async ({ email, password, userAgent, ipAddress }) => {
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-        throw new AppError(
-            "Invalid email or password.",
-            401
-        );
+        throw new AppError("Invalid email or password.", 401);
     }
 
-    const passwordMatched =
-        await comparePassword(
-            password,
-            user.password
-        );
+    const passwordMatched = await comparePassword(password, user.password);
 
     if (!passwordMatched) {
-        throw new AppError(
-            "Invalid email or password.",
-            401
-        );
+        throw new AppError("Invalid email or password.", 401);
     }
 
     if (!user.isVerified) {
-        throw new AppError(
-            "Please verify your email before logging in.",
-            403
-        );
+        throw new AppError("Please verify your email before logging in.", 403);
     }
 
     const payload = {
@@ -133,18 +90,10 @@ export const loginUser = async ({
         role: user.role,
     };
 
-    const accessToken =
-        generateAccessToken(payload);
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
-    const refreshToken =
-        generateRefreshToken(payload);
-
-    await createSession({
-        userId: user._id,
-        refreshToken,
-        userAgent,
-        ipAddress,
-    });
+    await createSession({ userId: user._id, refreshToken, userAgent, ipAddress });
 
     return {
         user: {
@@ -159,120 +108,13 @@ export const loginUser = async ({
 };
 
 /**
- * Refresh Access Token
+ * Get Current User
  */
-export const refreshAccessToken = async ({
-    refreshToken,
-}) => {
-
-    if (!refreshToken) {
-        throw new AppError(
-            "Refresh token missing.",
-            401
-        );
-    }
-
-    let payload;
-
-    try {
-
-        payload = verifyRefreshToken(
-            refreshToken
-        );
-
-    } catch {
-
-        throw new AppError(
-            "Invalid or expired refresh token.",
-            401
-        );
-
-    }
-
-    const session =
-        await findSession(refreshToken);
-
-    if (!session) {
-        throw new AppError(
-            "Session expired. Please login again.",
-            401
-        );
-    }
-
-    const user = session.user;
-
-    if (!user) {
-        throw new AppError(
-            "User not found.",
-            401
-        );
-    }
-
-    if (!user.isVerified) {
-        throw new AppError(
-            "User is not verified.",
-            403
-        );
-    }
-
-    const newAccessToken =
-        generateAccessToken({
-            userId: user._id,
-            email: user.email,
-            role: user.role,
-        });
-
-    return {
-
-        accessToken: newAccessToken,
-
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            isVerified: user.isVerified,
-        },
-
-    };
-
-};
-
-/**
- * Verify Email
- */
-export const verifyEmail = async (token) => {
-    const verification =
-        await findVerificationToken(token);
-
-    if (!verification) {
-        throw new AppError(
-            "Verification link is invalid or expired.",
-            400
-        );
-    }
-
-    verification.user.isVerified = true;
-
-    await verification.user.save();
-
-    await Token.deleteOne({
-        _id: verification._id,
-    });
-
-    return true;
-};
-export const getCurrentUser = async (
-    userId
-) => {
-
+export const getCurrentUser = async (userId) => {
     const user = await User.findById(userId);
 
     if (!user) {
-        throw new AppError(
-            "User not found.",
-            404
-        );
+        throw new AppError("User not found.", 404);
     }
 
     return {
@@ -282,41 +124,45 @@ export const getCurrentUser = async (
         role: user.role,
         isVerified: user.isVerified,
     };
-
 };
+
+/**
+ * Verify Email
+ */
+export const verifyEmail = async (token) => {
+    const verification = await findVerificationToken(token);
+
+    if (!verification) {
+        throw new AppError("Verification link is invalid or expired.", 400);
+    }
+
+    verification.user.isVerified = true;
+    await verification.user.save();
+
+    await Token.deleteOne({ _id: verification._id });
+
+    return true;
+};
+
 /**
  * Forgot Password
  */
-export const forgotPassword = async ({
-    email,
-}) => {
+export const forgotPassword = async ({ email }) => {
+    const user = await User.findOne({ email });
 
-    const user = await User.findOne({
-        email,
-    });
-
-    /**
-     * Don't reveal whether the account exists.
-     */
+    // Do not reveal whether the account exists
     if (!user) {
         return true;
     }
 
-    const resetToken =
-        await createPasswordResetToken(
-            user._id
-        );
+    const resetToken = await createPasswordResetToken(user._id);
 
-    const resetUrl =
-        `http://localhost:${env.PORT}/api/v1/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
     await sendEmail({
         to: user.email,
         subject: "Reset your StudentOS Password",
-        html: resetPasswordTemplate({
-            name: user.name,
-            resetUrl,
-        }),
+        html: resetPasswordTemplate({ name: user.name, resetUrl }),
     });
 
     return true;
@@ -325,183 +171,94 @@ export const forgotPassword = async ({
 /**
  * Reset Password
  */
-export const resetPassword = async ({
-    token,
-    password,
-}) => {
-
-    const passwordReset =
-        await findPasswordResetToken(
-            token
-        );
+export const resetPassword = async ({ token, password }) => {
+    const passwordReset = await findPasswordResetToken(token);
 
     if (!passwordReset) {
-        throw new AppError(
-            "Password reset link is invalid or expired.",
-            400
-        );
+        throw new AppError("Password reset link is invalid or expired.", 400);
     }
 
     const hashedPassword = await hashPassword(password);
 
-    await User.findByIdAndUpdate(
-        passwordReset.user._id,
-        {
-            password: hashedPassword,
-        }
-    );
+    await User.findByIdAndUpdate(passwordReset.user._id, { password: hashedPassword });
 
-    await Token.deleteOne({
-        _id: passwordReset._id,
-    });
+    await Token.deleteOne({ _id: passwordReset._id });
 
-    await deleteUserSessions(
-        passwordReset.user._id
-    );
-
-    return true;
-
-    await Token.deleteOne({
-        _id: passwordReset._id,
-    });
-
-    await deleteUserSessions(
-        user._id
-    );
+    await deleteUserSessions(passwordReset.user._id);
 
     return true;
 };
 
 /**
- * Validate Password Reset Token
+ * Validate Password Reset Token (used internally to check before rendering reset page)
  */
-export const validatePasswordResetToken =
-    async (token) => {
+export const validatePasswordResetToken = async (token) => {
+    const passwordReset = await findPasswordResetToken(token);
 
-        const passwordReset =
-            await findPasswordResetToken(token);
+    if (!passwordReset) {
+        throw new AppError("Password reset link is invalid or expired.", 400);
+    }
 
-        if (!passwordReset) {
-            throw new AppError(
-                "Password reset link is invalid or expired.",
-                400
-            );
-        }
+    return true;
+};
 
-        return true;
-
-    };
 /**
  * Logout User
  */
-export const logoutUser = async ({
-    refreshToken,
-}) => {
-
+export const logoutUser = async ({ refreshToken }) => {
     if (!refreshToken) {
         return true;
     }
 
-    await deleteSession(
-        refreshToken
-    );
+    await deleteSession(refreshToken);
 
     return true;
-
 };
+
 /**
  * Refresh Access Token
  */
-export const refreshUser = async ({
-    refreshToken,
-}) => {
-
+export const refreshUser = async ({ refreshToken }) => {
     if (!refreshToken) {
-        throw new AppError(
-            "Refresh token missing.",
-            401
-        );
+        throw new AppError("Refresh token missing.", 401);
     }
 
     try {
-
-        verifyRefreshToken(
-            refreshToken
-        );
-
+        verifyRefreshToken(refreshToken);
     } catch {
-
-        throw new AppError(
-            "Invalid or expired refresh token.",
-            401
-        );
-
+        throw new AppError("Invalid or expired refresh token.", 401);
     }
 
-    const session =
-        await findSession(
-            refreshToken
-        );
+    const session = await findSession(refreshToken);
 
     if (!session) {
-
-        throw new AppError(
-            "Session expired. Please login again.",
-            401
-        );
-
+        throw new AppError("Session expired. Please login again.", 401);
     }
 
     const user = session.user;
 
     if (!user) {
-
-        throw new AppError(
-            "User not found.",
-            401
-        );
-
+        throw new AppError("User not found.", 401);
     }
 
     if (!user.isVerified) {
-
-        throw new AppError(
-            "Please verify your email.",
-            403
-        );
-
+        throw new AppError("Please verify your email.", 403);
     }
 
-    const accessToken =
-        generateAccessToken({
-
-            userId: user._id,
-
-            email: user.email,
-
-            role: user.role,
-
-        });
+    const accessToken = generateAccessToken({
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+    });
 
     return {
-
         accessToken,
-
         user: {
-
             id: user._id,
-
             name: user.name,
-
             email: user.email,
-
             role: user.role,
-
-            isVerified:
-                user.isVerified,
-
+            isVerified: user.isVerified,
         },
-
     };
-
 };

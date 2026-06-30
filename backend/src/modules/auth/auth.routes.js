@@ -15,60 +15,28 @@ import {
     verify,
     forgot,
     reset,
-    resetPage,
     refresh,
     me,
-    logout
+    logout,
 } from "./auth.controller.js";
 
 const router = Router();
 
-router.post(
-    "/register",
-    validate(registerSchema),
-    register
-);
+router.post("/register", validate(registerSchema), register);
 
-router.post(
-    "/login",
-    validate(loginSchema),
-    login
-);
+router.post("/login", validate(loginSchema), login);
 
-router.post(
-    "/forgot-password",
-    validate(forgotPasswordSchema),
-    forgot
-);
+router.post("/forgot-password", validate(forgotPasswordSchema), forgot);
 
-router.get(
-    "/reset-password",
-    resetPage
-);
+// token via ?token= query param, password via body
+router.post("/reset-password", validate(resetPasswordSchema), reset);
 
-router.post(
-    "/reset-password",
-    validate(resetPasswordSchema),
-    reset
-);
+router.get("/verify-email", verify);
 
-router.post(
-    "/refresh",
-    refresh
-);
+router.post("/refresh", refresh);
 
-router.get(
-    "/verify-email",
-    verify
-);
+router.get("/me", protect, me);
 
-router.get(
-    "/me",
-    protect,
-    me
-);
-router.post(
-    "/logout",
-    logout
-);
+router.post("/logout", logout);
+
 export default router;
