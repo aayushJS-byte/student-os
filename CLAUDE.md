@@ -167,21 +167,44 @@ Scheduler runs every 15 min via `node-cron`. Started in `server.js` after DB con
 
 Ghost keys are status-specific and cleared on every status transition so each new stage can fire its own nudge. Thresholds differ by status: OA results come in fast (14 days), applied/interview take longer (21–30 days).
 
+## Offer tracking
+
+Independent offer records — applications with `status: "offer" | "accepted"` are surfaced on the `/offers` page via `GET /applications/offers`.
+
+**`documentLink`** — URL field on the offer subdocument for the offer letter (Google Drive / company portal link). No file uploads — zero storage cost. Shown in `OutcomePanel` as "View Offer Letter" button, editable in `ApplicationForm` and `StageTransitionDrawer` (accepted transition).
+
+## Navigation layout
+
+- **`AppShell.tsx`** — root layout for all protected routes. Desktop: fixed left sidebar (`w-56`). Mobile: hamburger button in top bar + Framer Motion slide-over overlay. `NAV_LINKS = [Dashboard, Applications, Offers]`.
+- **`AuthLayout.tsx`** — split-screen for all auth routes. Left 42% (lg+): dot-grid background, brand, hero text, 4 animated feature items. Right: `<Outlet />` renders the auth form. Mobile: left panel hidden, slim brand header shown.
+
+## Analytics (backend)
+
+`GET /applications/analytics` — single `$facet` aggregation returning:
+- `pipeline` — count per status + total
+- `kpi` — `{ totalApplications, active, offers, acceptanceRate, ghostRate }`
+- `funnel` — cumulative "reached this stage or beyond" for Applied/OA/Interview/Offer/Accepted with conversion %
+- `byMonth` — last 12 months application counts
+- `bySource` — counts grouped by source field
+- `byJobType` — counts grouped by job type
+
 ## Frontend conventions
 
-- **React Query key factory** — `APPLICATION_KEYS` in `src/hooks/applications/queryKeys.ts`
+- **React Query key factory** — `APPLICATION_KEYS` in `src/hooks/applications/queryKeys.ts`. Keys: `all`, `lists()`, `list(filters)`, `details()`, `detail(id)`, `stats()`, `offers()`, `analytics()`
+- **Global staleTime: 30s** — set in `src/utils/queryClient.ts`. Navigation never fires a fresh network request within 30s. Analytics hook overrides to 5 min + `keepPreviousData`.
+- **Mutation cache invalidation** — every mutation that changes application state (`create`, `update`, `delete`, `updateStatus`) invalidates `lists()`, `stats()`, AND `analytics()`. Do not add mutations that skip analytics invalidation.
 - **URL-based filter state** — `useSearchParams` + debounced search (see `useApplicationFilters.ts`)
 - **`@/`** alias maps to `src/`
 - Slide-over `Drawer` uses Framer Motion spring, locks body scroll, closes on ESC and backdrop click
 - `ActivityLog` entries are auto-generated server-side on every mutation — never user-editable
 - `ApplicationListItem` type omits `activityLog`, `interviews`, `notes`, `offer` (list view is lean); `Application` type has all fields. `ApplicationForm` accepts both via `Application | ApplicationListItem` prop.
-- OA `scheduledAt` uses `<input type="datetime-local">` — use `toInputDateTime()` from `utils/date.ts` to format for the input, `toInputDate()` for plain date fields.
+- OA `scheduledAt` and interview `scheduledAt` both use `<input type="datetime-local">` — use `toInputDateTime()` from `utils/date.ts` to format for the input, `toInputDate()` for plain date fields. Display with `formatDateTime()`.
 
 ## Phase completion
 
 - **Phase 1** — Auth (email verification, JWT, sessions) ✅
 - **Phase 2** — Internship Tracker CRUD (10 endpoints, 12 hooks, full UI) ✅
-- **Phase 3** — P0 fixes + email reminders ✅
+- **Phase 3** — P0 fixes + email reminders ✅ *(email delivery not yet tested)*
   - Status-gated progressive form
   - OA datetime with live countdown
   - Terminal status block on creation
@@ -190,6 +213,7 @@ Ghost keys are status-specific and cleared on every status transition so each ne
   - Hard delete (no more soft-delete/deletedAt)
   - `source` field (where the job was found)
   - `outcomeReason` field (rejection/withdrawal reason, offer notes)
+  - `documentLink` field on offer subdocument (offer letter URL)
   - Intent-based creation (Save vs Applied paths)
   - Forward-only status machine with blocked-transition popup
   - Checkpoint-specific detail panels (no cross-status bleed)
@@ -199,3 +223,10 @@ Ghost keys are status-specific and cleared on every status transition so each ne
   - `ConfirmDialog` variants (danger / primary / info)
   - `placeholderData` in `useApplication` to prevent refetch flash
   - `confirmTransition` keeps dialog open on API failure
+  - Interview rounds use datetime-local; `formatDateTime()` for display
+  - `AppShell` sidebar nav + `AuthLayout` split-screen
+  - Independent Offers page (`/offers`)
+- **Phase 5** — Advanced analytics dashboard ✅
+  - `GET /applications/analytics` with `$facet` aggregation
+  - Dashboard: 4 KPI cards, conversion funnel, activity bar chart (Recharts), source + job-type donut charts (Recharts PieChart), pipeline breakdown grid
+  - Cache: global staleTime 30s, analytics 5 min + keepPreviousData, mutation invalidation wired to analytics key
