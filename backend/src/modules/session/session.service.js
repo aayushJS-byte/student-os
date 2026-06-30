@@ -47,3 +47,16 @@ export const deleteSession = async (
         refreshTokenHash,
     });
 };
+
+/**
+ * Delete all sessions for a user.
+ */
+export const deleteUserSessions = async (
+    userId
+) => {
+
+    await Session.deleteMany({
+        user: userId,
+    });
+
+};

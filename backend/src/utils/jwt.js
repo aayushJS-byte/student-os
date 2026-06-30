@@ -2,10 +2,18 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 
 export const generateAccessToken = (payload) => {
+
+    console.log(
+        "Access Token Expires In:",
+        env.JWT_ACCESS_EXPIRES_IN
+    );
+
     return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
         expiresIn: env.JWT_ACCESS_EXPIRES_IN,
     });
+
 };
+
 
 export const generateRefreshToken = (payload) => {
     return jwt.sign(payload, env.JWT_REFRESH_SECRET, {

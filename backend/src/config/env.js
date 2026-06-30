@@ -18,8 +18,11 @@ const env = {
 
     BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
 
-    JWT_ACCESS_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES,
-    JWT_REFRESH_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES,
+    JWT_ACCESS_EXPIRES_IN:
+        process.env.JWT_ACCESS_EXPIRES_IN,
+
+    JWT_REFRESH_EXPIRES_IN:
+        process.env.JWT_REFRESH_EXPIRES_IN,
 
     CLIENT_URL: process.env.CLIENT_URL,
 

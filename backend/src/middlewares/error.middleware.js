@@ -33,7 +33,21 @@ const errorHandler = (err, req, res, next) => {
             message: "Duplicate value found.",
         });
     }
+    // JWT Expired
+    if (err.name === "TokenExpiredError") {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+            success: false,
+            message: "Access token expired.",
+        });
+    }
 
+    // Invalid JWT
+    if (err.name === "JsonWebTokenError") {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+            success: false,
+            message: "Invalid access token.",
+        });
+    }
     // Unknown Error
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
