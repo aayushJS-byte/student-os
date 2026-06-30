@@ -4,7 +4,6 @@ import RootLayout from "@/layouts/RootLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 
-import HomePage from "@/pages/home/HomePage";
 import LoginPage from "@/pages/auth/Login/LoginPage";
 import RegisterPage from "@/pages/auth/Register/RegisterPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPassword/ForgotPasswordPage";
@@ -18,7 +17,7 @@ export default function AppRoutes() {
     <Routes>
       <Route element={<RootLayout />}>
         {/* Public */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* Guest-only (redirect to /dashboard if authenticated) */}

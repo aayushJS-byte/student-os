@@ -4,7 +4,16 @@ import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { MESSAGES } from "../constants/messages.js";
 
 const errorHandler = (err, req, res, next) => {
-    console.error(err);
+    // Only log genuine server errors — auth/validation failures are operational
+    const isExpected =
+        err.statusCode ||
+        err instanceof ZodError ||
+        err.name === "TokenExpiredError" ||
+        err.name === "JsonWebTokenError";
+
+    if (!isExpected) {
+        console.error(err);
+    }
 
     // Zod Validation
     if (err instanceof ZodError) {
@@ -18,7 +27,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Custom AppError
+    // Custom AppError (401, 403, 404, 409, etc.)
     if (err.statusCode) {
         return res.status(err.statusCode).json({
             success: false,
@@ -33,6 +42,7 @@ const errorHandler = (err, req, res, next) => {
             message: "Duplicate value found.",
         });
     }
+
     // JWT Expired
     if (err.name === "TokenExpiredError") {
         return res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -48,7 +58,8 @@ const errorHandler = (err, req, res, next) => {
             message: "Invalid access token.",
         });
     }
-    // Unknown Error
+
+    // Unknown
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: MESSAGES.SERVER.INTERNAL_ERROR,

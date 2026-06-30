@@ -10,9 +10,11 @@ export const api = axios.create({
 });
 
 // ─── Refresh Token Interceptor ────────────────────────────────────────────────
-// On 401: attempt a silent token refresh then replay the original request.
-// If the refresh itself fails, clear cache and redirect to /login.
-// Auth-route 401s are passed through immediately — no refresh loop.
+//
+// Only attempts a silent refresh when the backend explicitly says the access
+// token is expired ("Access token expired."). Every other 401 — no cookie,
+// wrong password, already-logged-out — is passed straight through so React
+// Query can handle it cleanly without causing a redirect loop.
 
 type PendingEntry = {
   resolve: () => void;
@@ -29,6 +31,15 @@ function drainQueue(error: unknown) {
   pendingQueue = [];
 }
 
+// Routes that must never trigger a refresh attempt
+const SKIP_REFRESH = [
+  "/auth/refresh",
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
+
 api.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
@@ -40,11 +51,19 @@ api.interceptors.response.use(
 
     const status = error.response?.status;
     const url = originalRequest?.url ?? "";
+    const message = (error.response?.data as { message?: string })?.message;
 
-    // Never try to refresh on auth-route failures — avoids infinite loops
-    if (status !== 401 || url.includes("/auth/")) {
-      return Promise.reject(error);
-    }
+    // Only refresh when the token was present but expired.
+    // "Authentication required." means no token — refreshing won't help.
+    const isExpiredToken = message === "Access token expired.";
+
+    const shouldSkip =
+      status !== 401 ||
+      !isExpiredToken ||
+      originalRequest._retry ||
+      SKIP_REFRESH.some((path) => url.includes(path));
+
+    if (shouldSkip) return Promise.reject(error);
 
     // Queue concurrent 401s while a refresh is already in flight
     if (isRefreshing) {
@@ -63,7 +82,7 @@ api.interceptors.response.use(
     } catch (refreshError) {
       drainQueue(refreshError);
 
-      // Lazy-import to avoid a circular dep at module load time
+      // Refresh token itself is expired — clear cache and send to login
       const { queryClient } = await import("@/utils/queryClient");
       queryClient.clear();
       window.location.href = "/login";

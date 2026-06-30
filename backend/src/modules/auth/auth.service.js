@@ -178,13 +178,28 @@ export const resetPassword = async ({ token, password }) => {
         throw new AppError("Password reset link is invalid or expired.", 400);
     }
 
+    const user = await User.findById(passwordReset.user._id).select("+password");
+
+    if (!user) {
+        throw new AppError("User not found.", 404);
+    }
+
+    const isSamePassword = await comparePassword(password, user.password);
+
+    if (isSamePassword) {
+        throw new AppError(
+            "New password must be different from your current password.",
+            400
+        );
+    }
+
     const hashedPassword = await hashPassword(password);
 
-    await User.findByIdAndUpdate(passwordReset.user._id, { password: hashedPassword });
+    await User.findByIdAndUpdate(user._id, { password: hashedPassword });
 
     await Token.deleteOne({ _id: passwordReset._id });
 
-    await deleteUserSessions(passwordReset.user._id);
+    await deleteUserSessions(user._id);
 
     return true;
 };
