@@ -13,6 +13,7 @@ export function useUpdateStatus(applicationId: string) {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(applicationId) });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.stats() });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.analytics() });
     },
   });
 }

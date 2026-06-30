@@ -12,6 +12,7 @@ export function useUpdateApplication(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(id) });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.analytics() });
     },
   });
 }

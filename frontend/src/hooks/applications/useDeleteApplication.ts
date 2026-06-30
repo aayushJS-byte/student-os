@@ -10,6 +10,7 @@ export function useDeleteApplication() {
       queryClient.removeQueries({ queryKey: APPLICATION_KEYS.detail(id) });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.stats() });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.analytics() });
     },
   });
 }
