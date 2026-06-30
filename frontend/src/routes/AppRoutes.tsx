@@ -10,6 +10,8 @@ import ForgotPasswordPage from "@/pages/auth/ForgotPassword/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/auth/ResetPassword/ResetPasswordPage";
 import VerifyEmailPage from "@/pages/auth/VerifyEmail/VerifyEmailPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
+import ApplicationsPage from "@/pages/applications/ApplicationsPage";
+import ApplicationDetailPage from "@/pages/applications/ApplicationDetailPage";
 import NotFoundPage from "@/pages/error/NotFoundPage";
 
 export default function AppRoutes() {
@@ -31,6 +33,8 @@ export default function AppRoutes() {
         {/* Protected (redirect to /login if unauthenticated) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/applications/:id" element={<ApplicationDetailPage />} />
         </Route>
 
         <Route path="/404" element={<NotFoundPage />} />

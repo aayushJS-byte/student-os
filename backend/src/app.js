@@ -8,6 +8,7 @@ import morgan from "morgan";
 import env from "./config/env.js";
 import ApiResponse from "./utils/ApiResponse.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import applicationRoutes from "./modules/applications/application.routes.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
 const app = express();
@@ -32,6 +33,7 @@ app.get("/api/v1/health", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/applications", applicationRoutes);
 
 app.use(errorHandler);
 
