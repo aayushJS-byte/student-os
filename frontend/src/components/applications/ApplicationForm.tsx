@@ -82,10 +82,10 @@ function CoreFields({
       <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Core</h3>
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <Input label="Company" placeholder="Google, Meta, Stripe…" error={errors.company?.message} {...register("company")} />
+          <Input label="Company" placeholder="Google, Meta, Stripe…" required error={errors.company?.message} {...register("company")} />
         </div>
         <div className="col-span-2">
-          <Input label="Role" placeholder="Software Engineering Intern" error={errors.role?.message} {...register("role")} />
+          <Input label="Role" placeholder="Software Engineering Intern" required error={errors.role?.message} {...register("role")} />
         </div>
         <Controller
           name="jobType"
