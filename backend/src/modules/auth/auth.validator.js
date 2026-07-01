@@ -4,7 +4,7 @@ import { z } from "zod";
 // Valid:   aayush.gupta.che24@itbhu.ac.in
 //          che24@itbhu.ac.in
 //          che24@iitbhu.ac.in
-const instituteEmailRegex = /^([a-z]+\.)+che24@(itbhu|iitbhu)\.ac\.in$/;
+const instituteEmailRegex = /^([a-z0-9]+\.)+che24@(itbhu|iitbhu)\.ac\.in$/;
 
 export const registerSchema = z.object({
     name: z
