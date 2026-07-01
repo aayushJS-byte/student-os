@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://student-os-e4m1.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
