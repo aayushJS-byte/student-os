@@ -50,8 +50,24 @@ export function useUpdateProgress() {
   return useMutation({
     mutationFn: ({ slug, status, notes }: { slug: string; status: ProgressStatus; notes?: string }) =>
       PrepService.updateProgress(slug, status, notes),
+    onMutate: async ({ slug, status }) => {
+      await queryClient.cancelQueries({ queryKey: PREP_KEYS.progress() });
+      const previous = queryClient.getQueryData(PREP_KEYS.progress());
+      queryClient.setQueryData(PREP_KEYS.progress(), (old: Record<string, { status: ProgressStatus }> = {}) => {
+        if (status === "todo") {
+          const { [slug]: _, ...rest } = old;
+          return rest;
+        }
+        return { ...old, [slug]: { status, solvedAt: status === "solved" ? new Date().toISOString() : null } };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(PREP_KEYS.progress(), context.previous);
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PREP_KEYS.progress() });
       queryClient.invalidateQueries({ queryKey: PREP_KEYS.progressStats() });
     },
   });

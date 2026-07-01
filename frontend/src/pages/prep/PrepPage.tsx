@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronDown, ChevronUp, Tag, Calendar, Monitor, BookOpen,
-  Code2, Search, ChevronRight, Filter, CheckCircle2, AlertCircle, Circle,
+  ChevronDown, ChevronUp, Tag, Calendar, BookOpen,
+  Code2, Search, ChevronRight, Filter, CheckCircle2, AlertCircle, Circle, Info,
 } from "lucide-react";
 import { useCompanies, useSections, useQuestions, useProgress, useUpdateProgress } from "@/hooks/prep/usePrep";
 import type { Question, Difficulty, ProgressStatus } from "@/types/prep";
@@ -144,11 +144,6 @@ function QuestionCard({
             {question.year && (
               <span className="flex items-center gap-1 text-[10px] text-zinc-600">
                 <Calendar size={9} />{question.year}
-              </span>
-            )}
-            {question.platform && (
-              <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-                <Monitor size={9} />{question.platform}
               </span>
             )}
             {question.tags.slice(0, 3).map((tag) => (
@@ -447,6 +442,13 @@ export default function PrepPage() {
             </div>
           ) : (
             <div className="space-y-4 max-w-3xl">
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2.5">
+                <Info size={12} className="mt-0.5 shrink-0 text-zinc-500" />
+                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  These are <span className="text-zinc-400 font-medium">problem statements</span> from past IIT BHU placement drives — not an interactive code editor. Use them to understand what was asked and practice on your own.
+                </p>
+              </div>
+
               {sections.length > 0 && (
                 <SectionTabs sections={sections} active={selectedSection} counts={sectionCounts} onChange={setSelectedSection} />
               )}
