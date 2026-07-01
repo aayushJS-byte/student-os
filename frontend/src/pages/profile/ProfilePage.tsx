@@ -98,6 +98,7 @@ function ProfileForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
         label="Display name"
+        required
         placeholder="Your name"
         error={errors.name?.message}
         {...register("name")}
@@ -166,6 +167,7 @@ function PasswordForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
         label="Current password"
+        required
         type="password"
         placeholder="••••••••"
         error={errors.currentPassword?.message}
@@ -173,6 +175,7 @@ function PasswordForm() {
       />
       <Input
         label="New password"
+        required
         type="password"
         placeholder="••••••••"
         error={errors.newPassword?.message}
@@ -180,6 +183,7 @@ function PasswordForm() {
       />
       <Input
         label="Confirm new password"
+        required
         type="password"
         placeholder="••••••••"
         error={errors.confirmPassword?.message}
