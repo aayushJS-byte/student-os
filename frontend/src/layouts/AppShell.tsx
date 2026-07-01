@@ -94,14 +94,18 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       {/* User + logout */}
       <div className="shrink-0 border-t border-zinc-800/80 p-3 space-y-1">
         {user && (
-          <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 bg-zinc-800/40 border border-zinc-800">
+          <Link
+            to="/profile"
+            onClick={onLinkClick}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 bg-zinc-800/40 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/70 transition-colors"
+          >
             <Avatar name={user.name} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-white">{user.name}</p>
               <p className="truncate text-[10px] text-zinc-500">{user.email}</p>
             </div>
             <ChevronRight size={12} className="shrink-0 text-zinc-700" />
-          </div>
+          </Link>
         )}
         <button
           onClick={() => logout.mutate()}

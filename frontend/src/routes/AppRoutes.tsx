@@ -18,6 +18,7 @@ import ApplicationDetailPage from "@/pages/applications/ApplicationDetailPage";
 import OffersPage from "@/pages/offers/OffersPage";
 import PrepPage from "@/pages/prep/PrepPage";
 import CalendarPage from "@/pages/calendar/CalendarPage";
+import ProfilePage from "@/pages/profile/ProfilePage";
 import NotFoundPage from "@/pages/error/NotFoundPage";
 
 export default function AppRoutes() {
@@ -52,6 +53,7 @@ export default function AppRoutes() {
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/prep" element={<PrepPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
 
