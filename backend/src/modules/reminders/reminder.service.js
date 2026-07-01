@@ -13,6 +13,20 @@ import {
 
 const msToHours = (ms) => ms / (1000 * 60 * 60);
 
+/** Exact human-readable time remaining, e.g. "2 days 6 hours" or "45 minutes" */
+const formatTimeLeft = (hoursUntil) => {
+  const totalMinutes = Math.round(hoursUntil * 60);
+  const days    = Math.floor(totalMinutes / (60 * 24));
+  const hours   = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+
+  const parts = [];
+  if (days > 0)  parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+  if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+  if (days === 0 && minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
+  return parts.length ? parts.join(" ") : "less than a minute";
+};
+
 /** Format a datetime for email (IST) */
 const formatDateTime = (date) =>
   new Date(date).toLocaleString("en-IN", {
@@ -112,17 +126,18 @@ export const processReminders = async () => {
       const hoursUntil = msToHours(new Date(app.deadline) - now);
       for (const w of DEADLINE_WINDOWS) {
         if (inWindow(hoursUntil, w) && !hasSent(app.sentReminders, w.key)) {
+          const timeLeft = formatTimeLeft(hoursUntil);
           newKeys.push(w.key);
           emailTasks.push({
             to: user.email,
-            subject: `Apply to ${app.company} — deadline in ${w.label}`,
+            subject: `Apply to ${app.company} — deadline in ${timeLeft}`,
             html: deadlineReminderTemplate({
               name: user.name,
               company: app.company,
               role: app.role,
               deadline: formatDateOnly(app.deadline),
               scheduledAt: formatDateTime(app.deadline),
-              gapLabel: w.label,
+              gapLabel: timeLeft,
             }),
           });
         }
@@ -134,16 +149,17 @@ export const processReminders = async () => {
       const hoursUntil = msToHours(new Date(app.oa.scheduledAt) - now);
       for (const w of OA_WINDOWS) {
         if (inWindow(hoursUntil, w) && !hasSent(app.sentReminders, w.key)) {
+          const timeLeft = formatTimeLeft(hoursUntil);
           newKeys.push(w.key);
           emailTasks.push({
             to: user.email,
-            subject: `${app.company} OA in ${w.label} — ${app.role}`,
+            subject: `${app.company} OA in ${timeLeft} — ${app.role}`,
             html: oaReminderTemplate({
               name: user.name,
               company: app.company,
               role: app.role,
               scheduledAt: formatDateTime(app.oa.scheduledAt),
-              gapLabel: w.label,
+              gapLabel: timeLeft,
               platform: app.oa.platform || null,
               duration: app.oa.duration || null,
             }),
@@ -160,16 +176,17 @@ export const processReminders = async () => {
         for (const w of INTERVIEW_WINDOWS) {
           const key = `${w.key}_${interview._id}`;
           if (inWindow(hoursUntil, w) && !hasSent(app.sentReminders, key)) {
+            const timeLeft = formatTimeLeft(hoursUntil);
             newKeys.push(key);
             emailTasks.push({
               to: user.email,
-              subject: `${app.company} Round ${interview.round} interview in ${w.label}`,
+              subject: `${app.company} Round ${interview.round} interview in ${timeLeft}`,
               html: interviewReminderTemplate({
                 name: user.name,
                 company: app.company,
                 role: app.role,
                 scheduledAt: formatDateTime(interview.scheduledAt),
-                gapLabel: w.label,
+                gapLabel: timeLeft,
                 round: interview.round,
                 type: interview.type,
               }),
@@ -184,16 +201,17 @@ export const processReminders = async () => {
       const hoursUntil = msToHours(new Date(app.offer.deadline) - now);
       for (const w of OFFER_WINDOWS) {
         if (inWindow(hoursUntil, w) && !hasSent(app.sentReminders, w.key)) {
+          const timeLeft = formatTimeLeft(hoursUntil);
           newKeys.push(w.key);
           emailTasks.push({
             to: user.email,
-            subject: `${app.company} offer expires in ${w.label} — ${app.role}`,
+            subject: `${app.company} offer expires in ${timeLeft} — ${app.role}`,
             html: offerDeadlineTemplate({
               name: user.name,
               company: app.company,
               role: app.role,
               deadline: formatDateOnly(app.offer.deadline),
-              gapLabel: w.label,
+              gapLabel: timeLeft,
             }),
           });
         }
