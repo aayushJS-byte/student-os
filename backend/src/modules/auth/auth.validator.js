@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-const instituteEmailRegex = /^[a-zA-Z0-9._%+-]+@itbhu\.ac\.in$/;
+// Only CHE branch, 2024 batch — local part must end with "che24"
+// Valid:   aayush.gupta.che24@itbhu.ac.in
+//          che24@itbhu.ac.in
+//          che24@iitbhu.ac.in
+const instituteEmailRegex = /^([a-z]+\.)+che24@(itbhu|iitbhu)\.ac\.in$/;
 
 export const registerSchema = z.object({
     name: z
@@ -16,7 +20,7 @@ export const registerSchema = z.object({
         .transform((email) => email.toLowerCase())
         .refine(
             (email) => instituteEmailRegex.test(email),
-            "Only IIT BHU institute email addresses are allowed."
+            "Only CHE 2024 batch emails are allowed (e.g. name.che24@itbhu.ac.in or name.che24@iitbhu.ac.in)."
         ),
 
     password: z

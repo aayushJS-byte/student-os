@@ -6,6 +6,7 @@ import AuthLayout from "@/layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 
+import LandingPage from "@/pages/home/LandingPage";
 import LoginPage from "@/pages/auth/Login/LoginPage";
 import RegisterPage from "@/pages/auth/Register/RegisterPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPassword/ForgotPasswordPage";
@@ -23,14 +24,17 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<RootLayout />}>
-        {/* Public */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Auth layout (split-screen landing + forms) */}
+        {/* Landing page — guests only (authenticated users go to /dashboard) */}
+        <Route element={<GuestRoute />}>
+          <Route path="/" element={<LandingPage />} />
+        </Route>
+
+        {/* Auth layout (slim header + centered form) */}
         <Route element={<AuthLayout />}>
           <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-          {/* Guest-only (redirect to /dashboard if authenticated) */}
+          {/* Guest-only auth forms */}
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -39,7 +43,7 @@ export default function AppRoutes() {
           </Route>
         </Route>
 
-        {/* Protected (redirect to /login if unauthenticated) */}
+        {/* Protected app */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
