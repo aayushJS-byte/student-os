@@ -14,6 +14,7 @@ import {
   getApplicationStats,
   getAnalytics,
   getOffers,
+  getCalendarEvents,
 } from "./application.service.js";
 
 export const create = asyncHandler(async (req, res) => {
@@ -95,4 +96,9 @@ export const deleteInterviewRound = asyncHandler(async (req, res) => {
     req.params.interviewId
   );
   return ApiResponse.success(res, application, "Interview removed.");
+});
+
+export const calendar = asyncHandler(async (req, res) => {
+  const events = await getCalendarEvents(req.user._id);
+  return ApiResponse.success(res, { events }, "Calendar events fetched.");
 });

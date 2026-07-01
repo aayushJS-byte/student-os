@@ -9,4 +9,5 @@ export const APPLICATION_KEYS = {
   stats: () => [...APPLICATION_KEYS.all, "stats"] as const,
   offers: () => [...APPLICATION_KEYS.all, "offers"] as const,
   analytics: () => [...APPLICATION_KEYS.all, "analytics"] as const,
+  calendar: () => [...APPLICATION_KEYS.all, "calendar"] as const,
 };

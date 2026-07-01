@@ -9,9 +9,11 @@ import {
   PieChart,
   Pie,
 } from "recharts";
+import { Send, Activity, Trophy, TrendingUp } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useAnalytics } from "@/hooks/applications/useAnalytics";
 import type { AnalyticsData } from "@/types/application";
+import PrepTrackerWidget from "./PrepTrackerWidget";
 
 const SOURCE_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
@@ -75,18 +77,27 @@ function KPICard({
   label,
   value,
   sub,
-  accent,
+  icon: Icon,
+  iconColor,
+  iconBg,
 }: {
   label: string;
   value: string | number;
   sub?: string;
-  accent?: string;
+  icon: typeof Send;
+  iconColor: string;
+  iconBg: string;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${accent ?? "text-white"}`}>{value}</p>
-      {sub && <p className="mt-1 text-xs text-zinc-600">{sub}</p>}
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-zinc-500">{label}</p>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconBg}`}>
+          <Icon size={13} className={iconColor} />
+        </span>
+      </div>
+      <p className="text-3xl font-bold text-white tabular-nums">{value}</p>
+      {sub && <p className="text-xs text-zinc-600">{sub}</p>}
     </div>
   );
 }
@@ -319,13 +330,13 @@ export default function DashboardPage() {
         className="space-y-8"
       >
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-white">
-              Welcome back, {firstName}
+            <h1 className="text-2xl font-bold text-white">
+              Hey, {firstName} 👋
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              Here's how your placement hunt is going.
+              Here's your placement dashboard.
             </p>
           </div>
           {user?.role === "ADMIN" && (
@@ -351,18 +362,25 @@ export default function DashboardPage() {
                 label="Total Applied"
                 value={analytics.kpi.totalApplications}
                 sub="applications logged"
+                icon={Send}
+                iconColor="text-indigo-400"
+                iconBg="bg-indigo-500/10 border border-indigo-500/20"
               />
               <KPICard
                 label="Active"
                 value={analytics.kpi.active}
                 sub="in pipeline"
-                accent="text-blue-400"
+                icon={Activity}
+                iconColor="text-blue-400"
+                iconBg="bg-blue-500/10 border border-blue-500/20"
               />
               <KPICard
                 label="Offers"
                 value={analytics.kpi.offers}
                 sub="received"
-                accent="text-amber-400"
+                icon={Trophy}
+                iconColor="text-amber-400"
+                iconBg="bg-amber-500/10 border border-amber-500/20"
               />
               <KPICard
                 label="Acceptance Rate"
@@ -376,7 +394,9 @@ export default function DashboardPage() {
                     ? `${analytics.kpi.ghostRate}% ghosted`
                     : undefined
                 }
-                accent="text-emerald-400"
+                icon={TrendingUp}
+                iconColor="text-emerald-400"
+                iconBg="bg-emerald-500/10 border border-emerald-500/20"
               />
             </div>
 
@@ -403,6 +423,9 @@ export default function DashboardPage() {
 
             {/* Pipeline grid */}
             <PipelineGrid pipeline={analytics.pipeline} />
+
+            {/* Prep progress tracker */}
+            <PrepTrackerWidget />
           </>
         )}
 

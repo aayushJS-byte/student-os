@@ -11,6 +11,7 @@ export function useAddInterview(applicationId: string) {
       ApplicationService.addInterview(applicationId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(applicationId) });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.calendar() });
     },
   });
 }
@@ -28,6 +29,7 @@ export function useUpdateInterview(applicationId: string) {
     }) => ApplicationService.updateInterview(applicationId, interviewId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(applicationId) });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.calendar() });
     },
   });
 }
@@ -40,6 +42,7 @@ export function useDeleteInterview(applicationId: string) {
       ApplicationService.deleteInterview(applicationId, interviewId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(applicationId) });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.calendar() });
     },
   });
 }

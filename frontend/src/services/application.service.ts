@@ -6,6 +6,7 @@ import type {
   ApplicationFilters,
   ApplicationListResponse,
   ApplicationStats,
+  CalendarEvent,
   OfferRecord,
 } from "@/types/application";
 import type { ApplicationFormData, InterviewFormData } from "@/schemas/application.schemas";
@@ -65,5 +66,9 @@ export const ApplicationService = {
 
   getAnalytics() {
     return api.get<ApiResponse<AnalyticsData>>("/applications/analytics");
+  },
+
+  getCalendar() {
+    return api.get<ApiResponse<{ events: CalendarEvent[] }>>("/applications/calendar");
   },
 };

@@ -15,6 +15,8 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import ApplicationsPage from "@/pages/applications/ApplicationsPage";
 import ApplicationDetailPage from "@/pages/applications/ApplicationDetailPage";
 import OffersPage from "@/pages/offers/OffersPage";
+import PrepPage from "@/pages/prep/PrepPage";
+import CalendarPage from "@/pages/calendar/CalendarPage";
 import NotFoundPage from "@/pages/error/NotFoundPage";
 
 export default function AppRoutes() {
@@ -44,6 +46,8 @@ export default function AppRoutes() {
             <Route path="/applications" element={<ApplicationsPage />} />
             <Route path="/applications/:id" element={<ApplicationDetailPage />} />
             <Route path="/offers" element={<OffersPage />} />
+            <Route path="/prep" element={<PrepPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
           </Route>
         </Route>
 

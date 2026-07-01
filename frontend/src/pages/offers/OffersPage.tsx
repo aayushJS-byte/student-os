@@ -44,90 +44,100 @@ function deadlineUrgency(deadline: string | null) {
 
 // ─── Offer card ──────────────────────────────────────────────────────────────
 
-function OfferCard({ offer }: { offer: OfferRecord }) {
+function OfferCard({ offer, index }: { offer: OfferRecord; index: number }) {
   const amount = formatAmount(offer.offer, offer.jobType);
   const deadline = deadlineUrgency(offer.offer.deadline);
   const isPending = offer.status === "offer";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 gap-4"
+      transition={{ delay: index * 0.06 }}
+      className={`flex flex-col rounded-xl border bg-zinc-900/60 overflow-hidden ${
+        isPending ? "border-amber-500/20" : "border-emerald-500/20"
+      }`}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-sm font-bold text-zinc-200">
-            {offer.company[0].toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium text-white">{offer.company}</p>
-            <p className="text-xs text-zinc-500">{offer.role}</p>
-          </div>
-        </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            isPending
-              ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
-              : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-          }`}
-        >
-          {isPending ? "Pending Decision" : "Accepted"}
-        </span>
-      </div>
+      {/* Accent top bar */}
+      <div className={`h-1 w-full ${isPending ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-emerald-500 to-teal-400"}`} />
 
-      {/* Amount */}
-      {amount ? (
-        <div>
-          <p className="text-2xl font-bold text-white">
-            {amount.value}
-            <span className="ml-1 text-sm font-normal text-zinc-500">{amount.unit}</span>
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-600 uppercase tracking-wide">
-            {offer.jobType === "internship" || offer.jobType === "part-time" ? "Stipend" : "CTC"} · {offer.offer.currency}
-          </p>
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-600">Compensation not logged</p>
-      )}
-
-      {/* Meta */}
-      <div className="space-y-1.5 text-xs text-zinc-500">
-        {offer.offer.joiningDate && (
-          <div className="flex items-center gap-1.5">
-            <ArrowRight size={11} className="shrink-0" />
-            <span>Joining {formatDate(offer.offer.joiningDate, "medium")}</span>
+      <div className="p-5 flex flex-col gap-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold border ${
+              isPending ? "bg-amber-500/10 border-amber-500/20 text-amber-300" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+            }`}>
+              {offer.company[0].toUpperCase()}
+            </div>
+            <div>
+              <p className="font-semibold text-white">{offer.company}</p>
+              <p className="text-xs text-zinc-500">{offer.role}</p>
+            </div>
           </div>
-        )}
-        {offer.offer.deadline && deadline && (
-          <div className="flex items-center gap-1.5">
-            <Clock size={11} className="shrink-0" />
-            <span>Decision deadline: {formatDate(offer.offer.deadline, "medium")}</span>
-            <span className={`font-medium ${deadline.className}`}>· {deadline.label}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-1 border-t border-zinc-800">
-        {offer.offer.documentLink && (
-          <a
-            href={offer.offer.documentLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              isPending
+                ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
+                : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+            }`}
           >
-            <ExternalLink size={11} />
-            Offer Letter
-          </a>
+            {isPending ? "Pending" : "Accepted"}
+          </span>
+        </div>
+
+        {/* Amount */}
+        {amount ? (
+          <div>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {amount.value}
+              <span className="ml-1 text-sm font-normal text-zinc-500">{amount.unit}</span>
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-600 uppercase tracking-wide">
+              {offer.jobType === "internship" || offer.jobType === "part-time" ? "Stipend" : "CTC"} · {offer.offer.currency}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-600 italic">Compensation not logged</p>
         )}
-        <Link
-          to={`/applications/${offer._id}`}
-          className="ml-auto flex items-center gap-1 text-xs text-zinc-600 transition-colors hover:text-zinc-300"
-        >
-          View application <ArrowRight size={11} />
-        </Link>
+
+        {/* Meta */}
+        <div className="space-y-1.5 text-xs text-zinc-500">
+          {offer.offer.joiningDate && (
+            <div className="flex items-center gap-1.5">
+              <ArrowRight size={11} className="shrink-0 text-zinc-600" />
+              <span>Joining {formatDate(offer.offer.joiningDate, "medium")}</span>
+            </div>
+          )}
+          {offer.offer.deadline && deadline && (
+            <div className="flex items-center gap-1.5">
+              <Clock size={11} className="shrink-0 text-zinc-600" />
+              <span>Deadline: {formatDate(offer.offer.deadline, "medium")}</span>
+              <span className={`font-semibold ${deadline.className}`}>{deadline.label}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1 border-t border-zinc-800">
+          {offer.offer.documentLink && (
+            <a
+              href={offer.offer.documentLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
+            >
+              <ExternalLink size={11} />
+              Offer Letter
+            </a>
+          )}
+          <Link
+            to={`/applications/${offer._id}`}
+            className="ml-auto flex items-center gap-1 text-xs text-zinc-600 transition-colors hover:text-zinc-300"
+          >
+            Full details <ArrowRight size={11} />
+          </Link>
+        </div>
       </div>
     </motion.div>
   );
@@ -190,8 +200,8 @@ export default function OffersPage() {
         {/* Offers grid */}
         {offers && offers.length > 0 && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {offers.map((offer) => (
-              <OfferCard key={offer._id} offer={offer} />
+            {offers.map((offer, i) => (
+              <OfferCard key={offer._id} offer={offer} index={i} />
             ))}
           </div>
         )}

@@ -180,6 +180,20 @@ export interface AnalyticsData {
   byJobType: { _id: string; count: number }[];
 }
 
+export type CalendarEventType = "apply_deadline" | "oa" | "interview" | "offer_deadline";
+
+export interface CalendarEvent {
+  applicationId: string;
+  company: string;
+  role: string;
+  jobType: JobType;
+  type: CalendarEventType;
+  date: string;
+  label: string;
+  round?: number;
+  interviewType?: InterviewType;
+}
+
 export interface ApplicationFilters {
   status?: string;
   jobType?: string;

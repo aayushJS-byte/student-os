@@ -78,21 +78,19 @@ export default function ApplicationsPage() {
           className="space-y-6"
         >
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-white">Applications</h1>
-              {pagination && (
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  {pagination.total} total
-                </p>
-              )}
+              <h1 className="text-xl font-bold text-white">Applications</h1>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {pagination ? `${pagination.total} total` : "Track every role"}
+              </p>
             </div>
             <button
               onClick={openCreate}
-              className="flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-100"
+              className="flex shrink-0 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 shadow-lg shadow-indigo-500/20"
             >
-              <Plus size={15} />
-              New Application
+              <Plus size={14} />
+              New
             </button>
           </div>
 

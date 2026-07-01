@@ -13,6 +13,7 @@ export function useUpdateApplication(id: string) {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.detail(id) });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.analytics() });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.calendar() });
     },
   });
 }

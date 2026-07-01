@@ -11,6 +11,7 @@ export function useDeleteApplication() {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.stats() });
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.analytics() });
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.calendar() });
     },
   });
 }

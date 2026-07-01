@@ -16,6 +16,7 @@ import {
   listOffers,
   stats,
   analyticsOverview,
+  calendar,
   get,
   update,
   updateStatus,
@@ -34,6 +35,7 @@ router.use(protect);
 router.get("/stats/summary", stats);
 router.get("/analytics", analyticsOverview);
 router.get("/offers", listOffers);
+router.get("/calendar", calendar);
 
 // Application CRUD
 router.post("/", validate(createApplicationSchema), create);

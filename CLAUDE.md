@@ -60,6 +60,13 @@ src/modules/
   reminders/
     reminder.service.js    ← processReminders()
     reminder.scheduler.js  ← node-cron every 15 min, started in server.js
+  prep/
+    question.model.js      ← Question schema (company, section, slug, difficulty, tags…)
+    userProgress.model.js  ← UserProgress schema (user, questionSlug, status, notes)
+    question.service.js    ← getCompanies(), getSections(), getQuestions(), getUserProgress(), upsertProgress()
+    question.controller.js
+    question.routes.js     ← all routes under /api/v1/prep, protected by `protect`
+    question.seed.js       ← idempotent seed (upsert by slug); run: node src/modules/prep/question.seed.js
 src/mail/
   reminderTemplates.js     ← HTML templates for all reminder types
   verifyEmail.template.js
@@ -173,10 +180,31 @@ Independent offer records — applications with `status: "offer" | "accepted"` a
 
 **`documentLink`** — URL field on the offer subdocument for the offer letter (Google Drive / company portal link). No file uploads — zero storage cost. Shown in `OutcomePanel` as "View Offer Letter" button, editable in `ApplicationForm` and `StageTransitionDrawer` (accepted transition).
 
-## Navigation layout
+## Calendar
 
-- **`AppShell.tsx`** — root layout for all protected routes. Desktop: fixed left sidebar (`w-56`). Mobile: hamburger button in top bar + Framer Motion slide-over overlay. `NAV_LINKS = [Dashboard, Applications, Offers]`.
-- **`AuthLayout.tsx`** — split-screen for all auth routes. Left 42% (lg+): dot-grid background, brand, hero text, 4 animated feature items. Right: `<Outlet />` renders the auth form. Mobile: left panel hidden, slim brand header shown.
+`GET /api/v1/applications/calendar` — returns all calendar events derived from existing application data. No new model needed.
+
+**Event shape:**
+```js
+{
+  applicationId, company, role, jobType,
+  type,   // "apply_deadline" | "oa" | "interview" | "offer_deadline"
+  date,   // ISO string — the event datetime
+  label,  // human-readable e.g. "Round 2 – Technical"
+  round,  // interview round number (interviews only)
+  interviewType, // interview type (interviews only)
+}
+```
+
+**Event sources (per application):**
+| App status | Source field | Event type |
+|---|---|---|
+| `wishlist` | `deadline` | `apply_deadline` |
+| `oa` | `oa.scheduledAt` | `oa` |
+| `interview` | `interviews[i].scheduledAt` (pending rounds only) | `interview` |
+| `offer` | `offer.deadline` | `offer_deadline` |
+
+Frontend groups events by calendar date (local timezone). Route registered in `application.routes.js` before the `/:id` param route to avoid shadowing.
 
 ## Analytics (backend)
 
@@ -188,16 +216,49 @@ Independent offer records — applications with `status: "offer" | "accepted"` a
 - `bySource` — counts grouped by source field
 - `byJobType` — counts grouped by job type
 
+## Prep / PYQ module
+
+`GET /api/v1/prep/companies` — returns `{ name, count }[]` via `$group` aggregation (NOT string[]).
+`GET /api/v1/prep/sections?company=X` — sections available for a company.
+`GET /api/v1/prep/questions?company=X&section=Y` — filtered question list.
+`GET /api/v1/prep/questions/:slug` — full question detail.
+`GET /api/v1/prep/progress` — user's progress map `{ [slug]: { status, solvedAt, notes } }`.
+`GET /api/v1/prep/progress/stats` — `{ solved, attempted, todo, total }`.
+`PATCH /api/v1/prep/questions/:slug/progress` — upsert progress (`status`: todo/attempted/solved).
+
+**UserProgress** — unique compound index `{ user: 1, questionSlug: 1 }`. Status cycles: todo → attempted → solved → todo.
+
+**Security** — Google Drive source URL is never exposed. All question data lives in MongoDB, served exclusively through authenticated API.
+
+**Seed** — 141 questions across 27 companies. Run: `node src/modules/prep/question.seed.js` (safe to re-run, upserts by slug).
+
+## Navigation layout
+
+- **`AppShell.tsx`** — root layout for all protected routes. Desktop: fixed left sidebar (`w-56`). Mobile: hamburger + Framer Motion slide-over. `NAV_LINKS = [Dashboard, Applications, Offers, Calendar, Prep]`.
+- **`AuthLayout.tsx`** — split-screen for all auth routes. Left 42% (lg+): dot-grid background, brand, hero text, 4 animated feature items. Right: `<Outlet />`. Mobile: left panel hidden, slim brand header shown.
+
+## Axios refresh interceptor (frontend)
+
+`src/api/axios.ts` — intercepts 401s on protected routes, attempts `POST /auth/refresh` once.
+
+**Critical rules — read before touching this file:**
+- `refreshFailed` module flag: once refresh returns 401, ALL subsequent 401 interceptors bail immediately. Prevents the infinite loop where parallel React Query hooks restart the cycle.
+- **Do NOT call `queryClient.clear()` inside the interceptor.** Clearing cache while components are mounted triggers immediate re-subscriptions → new 401s → loop restarts.
+- **Do NOT call `window.location.href = "/login"` inside the interceptor.** Hard redirect causes a full page reload → module re-evaluates → `refreshFailed` resets to `false` → loop restarts from scratch.
+- On refresh failure: just `return Promise.reject(refreshError)`. React Query propagates the error → `useCurrentUser` returns `user=null` → `ProtectedRoute` renders `<Navigate to="/login">` (soft nav, no reload, state preserved).
+- `resetRefreshState()` is exported and called in `useLogin.onSuccess` to re-enable refresh for the new session.
+
 ## Frontend conventions
 
-- **React Query key factory** — `APPLICATION_KEYS` in `src/hooks/applications/queryKeys.ts`. Keys: `all`, `lists()`, `list(filters)`, `details()`, `detail(id)`, `stats()`, `offers()`, `analytics()`
-- **Global staleTime: 30s** — set in `src/utils/queryClient.ts`. Navigation never fires a fresh network request within 30s. Analytics hook overrides to 5 min + `keepPreviousData`.
-- **Mutation cache invalidation** — every mutation that changes application state (`create`, `update`, `delete`, `updateStatus`) invalidates `lists()`, `stats()`, AND `analytics()`. Do not add mutations that skip analytics invalidation.
+- **React Query key factory** — `APPLICATION_KEYS` in `src/hooks/applications/queryKeys.ts`. Keys: `all`, `lists()`, `list(filters)`, `details()`, `detail(id)`, `stats()`, `offers()`, `analytics()`, `calendar()`.
+- **PREP_KEYS** in `src/hooks/prep/queryKeys.ts`. Keys: `companies()`, `sections(company)`, `questions(company, section?)`, `progress()`, `progressStats()`.
+- **Global staleTime: 30s** — set in `src/utils/queryClient.ts`. No retry on 4xx (definitive server answers). Analytics hook overrides to 5 min + `keepPreviousData`. Calendar staleTime: 2 min.
+- **Mutation cache invalidation** — every mutation that changes application state (`create`, `update`, `delete`, `updateStatus`) invalidates `lists()`, `stats()`, `analytics()`, AND `calendar()`. Do not add mutations that skip these invalidations.
 - **URL-based filter state** — `useSearchParams` + debounced search (see `useApplicationFilters.ts`)
 - **`@/`** alias maps to `src/`
 - Slide-over `Drawer` uses Framer Motion spring, locks body scroll, closes on ESC and backdrop click
 - `ActivityLog` entries are auto-generated server-side on every mutation — never user-editable
-- `ApplicationListItem` type omits `activityLog`, `interviews`, `notes`, `offer` (list view is lean); `Application` type has all fields. `ApplicationForm` accepts both via `Application | ApplicationListItem` prop.
+- `ApplicationListItem` type omits `activityLog`, `interviews`, `notes`, `offer` (list view is lean); `Application` type has all fields.
 - OA `scheduledAt` and interview `scheduledAt` both use `<input type="datetime-local">` — use `toInputDateTime()` from `utils/date.ts` to format for the input, `toInputDate()` for plain date fields. Display with `formatDateTime()`.
 
 ## Phase completion
@@ -205,28 +266,26 @@ Independent offer records — applications with `status: "offer" | "accepted"` a
 - **Phase 1** — Auth (email verification, JWT, sessions) ✅
 - **Phase 2** — Internship Tracker CRUD (10 endpoints, 12 hooks, full UI) ✅
 - **Phase 3** — P0 fixes + email reminders ✅ *(email delivery not yet tested)*
-  - Status-gated progressive form
-  - OA datetime with live countdown
-  - Terminal status block on creation
-  - Full reminder system (backend + templates)
 - **Phase 4** — Business logic hardening + UX improvements ✅
-  - Hard delete (no more soft-delete/deletedAt)
-  - `source` field (where the job was found)
-  - `outcomeReason` field (rejection/withdrawal reason, offer notes)
-  - `documentLink` field on offer subdocument (offer letter URL)
-  - Intent-based creation (Save vs Applied paths)
-  - Forward-only status machine with blocked-transition popup
-  - Checkpoint-specific detail panels (no cross-status bleed)
-  - `CountdownTimer` generic component
-  - `ApplicationWorkflow` 5-stage stepper with offer node
-  - Outcome capture drawer (accepted/rejected/withdrawn)
-  - `ConfirmDialog` variants (danger / primary / info)
-  - `placeholderData` in `useApplication` to prevent refetch flash
-  - `confirmTransition` keeps dialog open on API failure
-  - Interview rounds use datetime-local; `formatDateTime()` for display
-  - `AppShell` sidebar nav + `AuthLayout` split-screen
-  - Independent Offers page (`/offers`)
 - **Phase 5** — Advanced analytics dashboard ✅
-  - `GET /applications/analytics` with `$facet` aggregation
-  - Dashboard: 4 KPI cards, conversion funnel, activity bar chart (Recharts), source + job-type donut charts (Recharts PieChart), pipeline breakdown grid
-  - Cache: global staleTime 30s, analytics 5 min + keepPreviousData, mutation invalidation wired to analytics key
+- **Phase 6** — Prep / PYQ module ✅
+  - `Question` + `UserProgress` models
+  - 7 REST endpoints under `/api/v1/prep`
+  - Two-sidebar layout (AppShell nav + internal company sidebar)
+  - 141 questions, 27 companies, 4 sections (OA / CS Fundamentals / System Design / HR)
+  - Per-question progress tracking (todo/attempted/solved) with status cycling
+  - `PrepTrackerWidget` on dashboard (ring + bars + stat tiles)
+- **Phase 7** — UI overhaul + Refresh token fix ✅
+  - Complete UI redesign: indigo accent system, gradient avatar, active nav dot indicator
+  - `ApplicationTable` responsive (card layout on mobile, table on md+)
+  - Dashboard KPI cards with icons + colored icon tiles
+  - Offer cards with gradient accent top bar
+  - `PrepTrackerWidget` redesigned with SVG gradient ring
+  - Refresh token interceptor fixed — `refreshFailed` flag stops infinite loop; removed `window.location.href` and `queryClient.clear()` from interceptor; navigation handled by React Router via `ProtectedRoute`
+  - Global query retry disabled for 4xx responses
+  - Duplicate Mongoose TTL index warnings fixed (Token + Session models)
+- **Phase 8** — Placement Calendar ✅ *(current)*
+  - `GET /applications/calendar` endpoint — aggregates events from all application date fields
+  - Custom month-view calendar page at `/calendar`
+  - Color-coded event types: apply deadline (amber), OA (violet), interview (blue), offer deadline (emerald)
+  - Day detail panel — click any day to see full event list with links to application

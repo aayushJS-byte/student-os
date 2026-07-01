@@ -328,6 +328,58 @@ export const getOffers = async (userId) => {
     .sort({ updatedAt: -1 });
 };
 
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+export const getCalendarEvents = async (userId) => {
+  const applications = await Application.find({
+    user: new mongoose.Types.ObjectId(userId),
+    status: { $in: ["wishlist", "oa", "interview", "offer"] },
+  }).select("company role jobType status deadline oa interviews offer");
+
+  const events = [];
+
+  for (const app of applications) {
+    const base = {
+      applicationId: app._id,
+      company: app.company,
+      role: app.role,
+      jobType: app.jobType,
+    };
+
+    if (app.status === "wishlist" && app.deadline) {
+      events.push({ ...base, type: "apply_deadline", date: app.deadline, label: "Apply-by Deadline" });
+    }
+
+    if (app.status === "oa" && app.oa?.scheduledAt) {
+      events.push({ ...base, type: "oa", date: app.oa.scheduledAt, label: "Online Assessment" });
+    }
+
+    if (app.status === "interview") {
+      for (const iv of app.interviews ?? []) {
+        if (iv.scheduledAt && iv.result === "pending") {
+          events.push({
+            ...base,
+            type: "interview",
+            date: iv.scheduledAt,
+            label: `Round ${iv.round} – ${iv.type.replace(/_/g, " ")}`,
+            round: iv.round,
+            interviewType: iv.type,
+          });
+        }
+      }
+    }
+
+    if (app.status === "offer" && app.offer?.deadline) {
+      events.push({ ...base, type: "offer_deadline", date: app.offer.deadline, label: "Offer Deadline" });
+    }
+  }
+
+  // Sort chronologically
+  events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  return events;
+};
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 export const getApplicationStats = async (userId) => {
