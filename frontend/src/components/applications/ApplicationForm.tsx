@@ -160,7 +160,7 @@ export default function ApplicationForm({
     reset,
     formState: { errors },
   } = useForm<ApplicationFormData>({
-    resolver: zodResolver(applicationSchema),
+    resolver: zodResolver(applicationSchema) as any,
     defaultValues: toFormDefaults(defaultValues),
   });
 

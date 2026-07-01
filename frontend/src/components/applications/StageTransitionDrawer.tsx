@@ -94,6 +94,7 @@ function InterviewForm({ appId, onClose }: { appId: string; onClose: () => void 
       scheduledAt: data.scheduledAt || undefined,
       duration: data.duration ? Number(data.duration) : undefined,
       notes: data.notes,
+      result: "pending" as const,
     });
     onClose();
   });

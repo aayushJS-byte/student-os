@@ -40,7 +40,7 @@ function InterviewFormBlock({
     control,
     formState: { errors },
   } = useForm<InterviewFormData>({
-    resolver: zodResolver(interviewSchema),
+    resolver: zodResolver(interviewSchema) as any,
     defaultValues: defaultValues
       ? {
           round: defaultValues.round,

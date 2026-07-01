@@ -23,7 +23,7 @@ interface CreateApplicationFlowProps {
 const CORE_DEFAULTS = {
   jobType: "internship" as const,
   referral: false,
-  tags: [] as string[],
+  tags: [] as ApplicationFormData["tags"],
 };
 
 function IntentPicker({ onPick }: { onPick: (i: "saved" | "applied") => void }) {
@@ -88,7 +88,7 @@ function SavedForm({
     control,
     formState: { errors },
   } = useForm<ApplicationFormData>({
-    resolver: zodResolver(applicationSchema),
+    resolver: zodResolver(applicationSchema) as any,
     defaultValues: { ...CORE_DEFAULTS, status: "wishlist" },
   });
 
@@ -186,7 +186,7 @@ function AppliedForm({
     watch,
     formState: { errors },
   } = useForm<ApplicationFormData>({
-    resolver: zodResolver(applicationSchema),
+    resolver: zodResolver(applicationSchema) as any,
     defaultValues: { ...CORE_DEFAULTS, status: "applied" },
   });
 

@@ -51,12 +51,6 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatFullDate(iso: string) {
-  return new Date(iso).toLocaleDateString([], {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
-}
-
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
 function Legend() {
