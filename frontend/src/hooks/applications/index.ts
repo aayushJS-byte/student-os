@@ -9,3 +9,4 @@ export { useUpdateStatus } from "./useUpdateStatus";
 export { useAddInterview, useUpdateInterview, useDeleteInterview } from "./useInterviewMutations";
 export { useOffers } from "./useOffers";
 export { useAnalytics } from "./useAnalytics";
+export { useCalendar } from "./useCalendar";

@@ -51,16 +51,27 @@ export const getProgressStats = async (userId) => {
     ]),
   ]);
 
-  const stats = { solved: 0, attempted: 0, todo: 0, total: totalQuestions };
+  const stats = { solved: 0, attempted: 0, total: totalQuestions };
   for (const p of progress) stats[p._id] = p.count;
+  // todo = questions with no progress record (default state, never stored)
+  stats.todo = totalQuestions - stats.solved - stats.attempted;
 
   return stats;
 };
 
-/** Upsert a user's status for one question */
+/** Upsert a user's status for one question.
+ *  "todo" is the default state — no record needed — so we delete on reset.
+ */
 export const upsertProgress = async (userId, slug, { status, notes }) => {
-  const update = { status };
-  if (status === "solved") update.solvedAt = new Date();
+  if (status === "todo") {
+    await UserProgress.deleteOne({ user: userId, questionSlug: slug });
+    return null;
+  }
+
+  const update = {
+    status,
+    solvedAt: status === "solved" ? new Date() : null,
+  };
   if (notes !== undefined) update.notes = notes;
 
   return UserProgress.findOneAndUpdate(
