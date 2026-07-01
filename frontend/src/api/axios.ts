@@ -11,10 +11,24 @@ export const api = axios.create({
 
 // ─── Refresh Token Interceptor ────────────────────────────────────────────────
 //
-// Only attempts a silent refresh when the backend explicitly says the access
-// token is expired ("Access token expired."). Every other 401 — no cookie,
-// wrong password, already-logged-out — is passed straight through so React
-// Query can handle it cleanly without causing a redirect loop.
+// Silent token refresh on 401 from any protected route.
+//
+// WHAT CAUSED THE INFINITE LOOP:
+//   Previous versions called `window.location.href = "/login"` on refresh
+//   failure. This triggers a full browser page reload, which re-evaluates
+//   this module and resets all state — including any "already failed" flag.
+//   The next page load immediately fires GET /auth/me → 401 → tries refresh
+//   → fails → reloads again → forever.
+//
+// THE FIX:
+//   Do NOT navigate inside the interceptor. Just reject the error.
+//   React Query propagates the 401 to useCurrentUser → user = null →
+//   ProtectedRoute renders <Navigate to="/login"> (React Router soft nav,
+//   no page reload, module state is preserved).
+//
+//   `refreshFailed` prevents concurrent/subsequent 401s from triggering
+//   additional refresh attempts while we're already handling one failure.
+//   It is reset on successful login via resetRefreshState().
 
 type PendingEntry = {
   resolve: () => void;
@@ -22,16 +36,21 @@ type PendingEntry = {
 };
 
 let isRefreshing = false;
+let refreshFailed = false;
 let pendingQueue: PendingEntry[] = [];
 
-function drainQueue(error: unknown) {
-  pendingQueue.forEach((entry) =>
-    error ? entry.reject(error) : entry.resolve()
-  );
+/** Reset after a successful login so the new session can refresh normally. */
+export function resetRefreshState() {
+  refreshFailed = false;
+  isRefreshing = false;
   pendingQueue = [];
 }
 
-// Routes that must never trigger a refresh attempt
+function drainQueue(error: unknown) {
+  pendingQueue.forEach((e) => (error ? e.reject(error) : e.resolve()));
+  pendingQueue = [];
+}
+
 const SKIP_REFRESH = [
   "/auth/refresh",
   "/auth/login",
@@ -51,21 +70,15 @@ api.interceptors.response.use(
 
     const status = error.response?.status;
     const url = originalRequest?.url ?? "";
-    const message = (error.response?.data as { message?: string })?.message;
-
-    // Only refresh when the token was present but expired.
-    // "Authentication required." means no token — refreshing won't help.
-    const isExpiredToken = message === "Access token expired.";
 
     const shouldSkip =
       status !== 401 ||
-      !isExpiredToken ||
+      refreshFailed ||
       originalRequest._retry ||
       SKIP_REFRESH.some((path) => url.includes(path));
 
     if (shouldSkip) return Promise.reject(error);
 
-    // Queue concurrent 401s while a refresh is already in flight
     if (isRefreshing) {
       return new Promise<void>((resolve, reject) => {
         pendingQueue.push({ resolve, reject });
@@ -80,13 +93,12 @@ api.interceptors.response.use(
       drainQueue(null);
       return api(originalRequest);
     } catch (refreshError) {
+      refreshFailed = true;
       drainQueue(refreshError);
-
-      // Refresh token itself is expired — clear cache and send to login
-      const { queryClient } = await import("@/utils/queryClient");
-      queryClient.clear();
-      window.location.href = "/login";
-
+      // Do NOT redirect here. Rejecting is enough:
+      //   useCurrentUser → error → user=null → ProtectedRoute → <Navigate to="/login">
+      // A hard redirect (window.location.href) would reload the page, reset
+      // this module, and restart the loop from zero.
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

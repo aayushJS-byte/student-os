@@ -41,33 +41,30 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <FormCard>
-          <div className="text-center">
-            <p className="text-sm font-semibold tracking-widest text-zinc-500 uppercase">
-              StudentOS
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-white">
-              Invalid link
-            </h1>
-            <p className="mt-2 text-sm text-zinc-400">
-              This password reset link is missing a token.
-            </p>
-            <Link
-              to="/forgot-password"
-              className="mt-6 inline-block text-sm text-zinc-400 transition-colors hover:text-white"
-            >
-              Request a new link
-            </Link>
-          </div>
-        </FormCard>
-      </div>
+      <FormCard>
+        <div className="text-center">
+          <p className="text-sm font-semibold tracking-widest text-zinc-500 uppercase">
+            StudentOS
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold text-white">
+            Invalid link
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            This password reset link is missing a token.
+          </p>
+          <Link
+            to="/forgot-password"
+            className="mt-6 inline-block text-sm text-zinc-400 transition-colors hover:text-white"
+          >
+            Request a new link
+          </Link>
+        </div>
+      </FormCard>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <FormCard>
+    <FormCard>
         {/* Brand */}
         <div className="mb-8 text-center">
           <p className="text-sm font-semibold tracking-widest text-zinc-500 uppercase">
@@ -121,7 +118,6 @@ export default function ResetPasswordPage() {
             Reset password
           </Button>
         </form>
-      </FormCard>
-    </div>
+    </FormCard>
   );
 }
