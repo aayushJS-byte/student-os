@@ -39,13 +39,23 @@ import resetPasswordTemplate from "../../mail/resetPassword.template.js";
 export const registerUser = async ({ name, email, password }) => {
     const existingUser = await User.findOne({ email });
 
-    if (existingUser) {
+    if (existingUser?.isVerified) {
         throw new AppError("Email already registered.", 409);
     }
 
     const hashedPassword = await hashPassword(password);
 
-    const user = await User.create({ name, email, password: hashedPassword });
+    let user;
+    if (existingUser) {
+        // Unverified ghost account — overwrite with new credentials and resend verification
+        await Token.deleteMany({ user: existingUser._id, type: "EMAIL_VERIFICATION" });
+        existingUser.name = name;
+        existingUser.password = hashedPassword;
+        await existingUser.save();
+        user = existingUser;
+    } else {
+        user = await User.create({ name, email, password: hashedPassword });
+    }
 
     const verificationToken = await createEmailVerificationToken(user._id);
 
