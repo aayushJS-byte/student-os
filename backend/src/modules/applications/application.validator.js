@@ -14,9 +14,20 @@ import {
 // Empty string from an unfilled <input type="date"> or <input type="number">
 // must be treated as "not provided" — coercing "" to a Date gives Invalid Date.
 
+// Bare "YYYY-MM-DDTHH:mm[:ss]" with no timezone offset — what <input type="datetime-local">
+// sends. Without an explicit offset, `new Date()` parses it in the server process's
+// timezone, which drifts between dev (IST) and prod (commonly UTC), silently shifting
+// every OA/interview time by +5:30 in production. All users are IIT BHU students (IST),
+// so pin it explicitly instead of trusting the ambient server timezone.
+const DATETIME_LOCAL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+
 /** Optional date: empty string or missing → undefined; valid string → Date */
 const optionalDate = z.preprocess(
-  (v) => (!v || v === "" ? undefined : v),
+  (v) => {
+    if (!v || v === "") return undefined;
+    if (typeof v === "string" && DATETIME_LOCAL_RE.test(v)) return `${v}+05:30`;
+    return v;
+  },
   z.coerce.date().optional()
 );
 
